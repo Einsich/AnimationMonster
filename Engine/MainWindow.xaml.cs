@@ -23,7 +23,7 @@ namespace Engine
         {
             //InitializeComponent();
 
-            ConsoleManager.Show();
+            //ConsoleManager.Show();
 
         }
         public static float aspectRatio;

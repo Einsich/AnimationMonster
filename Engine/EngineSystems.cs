@@ -27,7 +27,6 @@ namespace Engine
             Assimp.AssimpContext importer = new Assimp.AssimpContext();
             s = importer.ImportFile(fileName);
             var r = s.Meshes[0];
-            //var r = ModelLoader.LoadFromCollada(@"D:\MyEngine\Engine\Zebra\untitled.dae");
             //foreach(var mesh in r)
             {
 
@@ -35,7 +34,9 @@ namespace Engine
                 model.GetComponent<MeshRenderer>().mesh = new ProcessedMesh(s.Meshes[0]);
                 model.GetComponent<Transform>();
             }
+           
             EntitySystem.AddSystem<CameraControlSystem>();
+            EntitySystem.AddSystem<SkyBoxRenderSystem>();
             standartShader.Create(GLContainer.OpenGL, File.ReadAllText(@"Shaders\standart_shader.vertex"), File.ReadAllText(@"Shaders\standart_shader.fragment"), null);
 
 
@@ -47,6 +48,8 @@ namespace Engine
             standartShader.BindAttributeLocation(GLContainer.OpenGL, VertexAttributes.Position, "Position");
             standartShader.BindAttributeLocation(GLContainer.OpenGL, VertexAttributes.Normal, "Normal");
             standartShader.BindAttributeLocation(GLContainer.OpenGL, VertexAttributes.TexCoord, "TexCoord");
+
+
         }
         public void Update(MeshRenderer meshRenderer, Transform transform)
         {
@@ -74,7 +77,7 @@ namespace Engine
             gl.Uniform1(gl.GetUniformLocation(standartShader.ShaderProgramObject, "mainTex"), 0);
 
             var vertexBufferArray = mesh.vertexBufferArray;
-                vertexBufferArray.Bind(gl);
+            vertexBufferArray.Bind(gl);
             gl.DrawArrays(OpenGL.GL_TRIANGLES, 0, mesh.vertexCount);
 
             vertexBufferArray.Unbind(gl);
@@ -94,7 +97,7 @@ namespace Engine
             
             Entity camera = Entity.Create<Camera>();            
             camera.GetComponent<Camera>().CreatePerspective(Mathf.DegreesToRadian(90), MainWindow.aspectRatio, 0.01f, 100000);
-            camera.AddComponent<Transform>().position = new Vector3(0,150,60);
+            camera.AddComponent<Transform>().position = new Vector3(0,150,90);
             camera.AddComponent<MainCameraTag>();
             camera = Entity.Create<Camera>();
             camera.GetComponent<Camera>().CreatePerspective(Mathf.DegreesToRadian(60), MainWindow.aspectRatio, 0.01f, 100000);
@@ -121,6 +124,52 @@ namespace Engine
         }
 
     }
+    public class SkyBoxRenderSystem : BaseSystem
+    {
 
-    
+        ShaderProgram skyboxShader = new ShaderProgram();
+        public SkyBoxRenderSystem() : base(-10)
+        {
+
+        }
+        public override void End()
+        {
+        }
+
+        public override void Start()
+        {
+            {
+                Entity skyBox = Entity.Create<SkyBox>();
+                skyBox.GetComponent<SkyBox>().Init();
+            }
+            skyboxShader.Create(GLContainer.OpenGL, File.ReadAllText(@"Shaders\sky_box.vertex"), File.ReadAllText(@"Shaders\sky_box.fragment"), null);
+            skyboxShader.BindAttributeLocation(GLContainer.OpenGL, VertexAttributes.Position, "Position");
+        }
+        public void Update(SkyBox skyBox)
+        {
+            OpenGL gl = GLContainer.OpenGL;
+            gl.DepthMask((byte)OpenGL.GL_FALSE);
+            skyboxShader.Bind(gl);
+
+            Camera camera = null;
+            Transform cameraTransform = null;
+            EntitySystem.FirstQuery(new Action<Camera, Transform, MainCameraTag>((cam, tr, tag) => { camera = cam; cameraTransform = tr; }));
+            if (camera == null)
+                return;
+            //  Set the matrices.
+            Matrix4x4 proj;
+            Matrix4x4.Invert(cameraTransform.GetMatrix, out proj);
+            proj.Translation = Vector3.Zero;
+            skyboxShader.SetUniformMatrix4(gl, "Projection", (camera.GetProjection).ToArray());
+            skyboxShader.SetUniformMatrix4(gl, "Modelview", (proj).ToArray());
+
+            gl.BindVertexArray(skyBox.vertexBufferArrayObject);
+            gl.BindTexture(OpenGL.GL_TEXTURE_CUBE_MAP, skyBox.cubeMapObject);
+            gl.DrawArrays(OpenGL.GL_TRIANGLES, 0, 36);
+            gl.DepthMask((byte)OpenGL.GL_TRUE);
+            skyboxShader.Unbind(gl);
+        }
+    }
+
+
 }
