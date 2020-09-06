@@ -68,7 +68,7 @@ namespace SharpGL.Texture
                     bitmapData.Scan0);
 
             image.UnlockBits(bitmapData);
-
+            image.Dispose();
             if (mipmap)
             {
                 gl.TexParameter(OpenGL.GL_TEXTURE_2D, OpenGL.GL_TEXTURE_MIN_FILTER, OpenGL.GL_LINEAR_MIPMAP_LINEAR);
@@ -117,6 +117,7 @@ namespace SharpGL.Texture
                         bitmapData.Scan0);
 
                 image.UnlockBits(bitmapData);
+                image.Dispose();
             }
             if (mipmap)
             {

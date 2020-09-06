@@ -2,7 +2,7 @@
 using System;
 using System.Drawing;
 using System.IO;
-
+using System.Linq;
 using System.Numerics;
 using SharpGL;
 using SharpGL.Shaders;
@@ -17,6 +17,7 @@ namespace Engine
     {
 
         ShaderProgram standartShader = new ShaderProgram();
+        ShaderProgram animationShader = new ShaderProgram();
         public StartSystem()
             : base(0) { }
         Texture2D texture = new Texture2D();
@@ -25,30 +26,36 @@ namespace Engine
             string fileName = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), @"Models\rp_manuel_animated_001_dancing.fbx");
             Assimp.Scene s;
             Assimp.AssimpContext importer = new Assimp.AssimpContext();
-            s = importer.ImportFile(fileName);
+            s = importer.ImportFile(fileName, PostProcessSteps.Triangulate | PostProcessSteps.FlipUVs | PostProcessSteps.LimitBoneWeights);
             var r = s.Meshes[0];
             //foreach(var mesh in r)
             {
 
                 Entity model = Entity.Create<MeshRenderer, Transform>();
-                model.GetComponent<MeshRenderer>().mesh = new ProcessedMesh(s.Meshes[0]);
+                model.GetComponent<MeshRenderer>().mesh = new ProcessedMesh(s,0);
                 model.GetComponent<Transform>();
             }
            
             EntitySystem.AddSystem<CameraControlSystem>();
             EntitySystem.AddSystem<SkyBoxRenderSystem>();
-            standartShader.Create(GLContainer.OpenGL, File.ReadAllText(@"Shaders\standart_shader.vertex"), File.ReadAllText(@"Shaders\standart_shader.fragment"), null);
-
 
             texture.Create(GLContainer.OpenGL);
-
             texture.SetImage(GLContainer.OpenGL, new Bitmap(@"Models\tex\rp_manuel_animated_001_dif.jpg"), true);
             texture.Unbind(GLContainer.OpenGL);
-            
+
+            standartShader.Create(GLContainer.OpenGL, File.ReadAllText(@"Shaders\standart_shader.vertex"), File.ReadAllText(@"Shaders\standart_shader.fragment"), null);
+
             standartShader.BindAttributeLocation(GLContainer.OpenGL, VertexAttributes.Position, "Position");
             standartShader.BindAttributeLocation(GLContainer.OpenGL, VertexAttributes.Normal, "Normal");
             standartShader.BindAttributeLocation(GLContainer.OpenGL, VertexAttributes.TexCoord, "TexCoord");
 
+            animationShader.Create(GLContainer.OpenGL, File.ReadAllText(@"Shaders\animation.vertex"), File.ReadAllText(@"Shaders\animation.fragment"), null);
+
+            animationShader.BindAttributeLocation(GLContainer.OpenGL, VertexAttributes.Position, "Position");
+            animationShader.BindAttributeLocation(GLContainer.OpenGL, VertexAttributes.Normal, "Normal");
+            animationShader.BindAttributeLocation(GLContainer.OpenGL, VertexAttributes.TexCoord, "TexCoord");
+            animationShader.BindAttributeLocation(GLContainer.OpenGL, VertexAttributes.TexCoord, "BoneWeights");
+            animationShader.BindAttributeLocation(GLContainer.OpenGL, VertexAttributes.TexCoord, "BoneIndex");
 
         }
         public void Update(MeshRenderer meshRenderer, Transform transform)
@@ -56,10 +63,11 @@ namespace Engine
 
             ProcessedMesh mesh = meshRenderer.mesh;
             OpenGL gl = GLContainer.OpenGL;
-            standartShader.Bind(gl);
+            ShaderProgram shader = mesh.hasAnimation ? animationShader : standartShader;
+            shader.Bind(gl);
 
             //  Set the light position.
-            standartShader.SetUniform3(gl, "LightPosition", 0.25f, 0.25f, 10f);
+            shader.SetUniform3(gl, "LightPosition", 0.25f, 0.25f, 10f);
             Camera camera = null;
             Transform cameraTransform = null;
             EntitySystem.FirstQuery(new Action<Camera, Transform, MainCameraTag>((cam, tr, tag) => { camera = cam; cameraTransform = tr; }));
@@ -68,13 +76,17 @@ namespace Engine
             //  Set the matrices.
             Matrix4x4 proj;
             Matrix4x4.Invert(cameraTransform.GetMatrix, out proj);
-            standartShader.SetUniformMatrix4(gl, "Projection", (camera.GetProjection ).ToArray());
-            standartShader.SetUniformMatrix4(gl, "Modelview", (proj * transform.GetMatrix).ToArray());
-            standartShader.SetUniformMatrix3(gl, "NormalMatrix", transform.GetMatrix.To3x3Array());
-                
+            shader.SetUniformMatrix4(gl, "Projection", (camera.GetProjection ).ToArray());
+            shader.SetUniformMatrix4(gl, "Modelview", (proj * transform.GetMatrix).ToArray());
+            shader.SetUniformMatrix3(gl, "NormalMatrix", transform.GetMatrix.To3x3Array());
+            if(mesh.hasAnimation)
+            {
+                mesh.ProcessAnimation();
+                gl.UniformMatrix4(gl.GetUniformLocation(shader.ShaderProgramObject, "Bones"), mesh.boneTransform.Length / 16, false, mesh.boneTransform);
+            }
             gl.ActiveTexture(OpenGL.GL_TEXTURE0);
             texture.Bind(gl);
-            gl.Uniform1(gl.GetUniformLocation(standartShader.ShaderProgramObject, "mainTex"), 0);
+            gl.Uniform1(gl.GetUniformLocation(shader.ShaderProgramObject, "mainTex"), 0);
 
             var vertexBufferArray = mesh.vertexBufferArray;
             vertexBufferArray.Bind(gl);
@@ -83,7 +95,7 @@ namespace Engine
             vertexBufferArray.Unbind(gl);
             
             texture.Unbind(gl);
-            standartShader.Unbind(gl);
+            shader.Unbind(gl);
         }
 
         public override void End()
@@ -97,11 +109,8 @@ namespace Engine
             
             Entity camera = Entity.Create<Camera>();            
             camera.GetComponent<Camera>().CreatePerspective(Mathf.DegreesToRadian(90), MainWindow.aspectRatio, 0.01f, 100000);
-            camera.AddComponent<Transform>().position = new Vector3(0,150,90);
+            camera.AddComponent<Transform>().position = new Vector3(0,100,150);
             camera.AddComponent<MainCameraTag>();
-            camera = Entity.Create<Camera>();
-            camera.GetComponent<Camera>().CreatePerspective(Mathf.DegreesToRadian(60), MainWindow.aspectRatio, 0.01f, 100000);
-            camera.AddComponent<Transform>().position = new Vector3(0, 150, 150);
             
 
         }
@@ -170,6 +179,26 @@ namespace Engine
             skyboxShader.Unbind(gl);
         }
     }
+    public class AnimationRenderSystem : BaseSystem
+    {
 
+        public AnimationRenderSystem() : base(1)
+        {
+
+        }
+        public override void End()
+        {
+        }
+
+        public override void Start()
+        {
+           
+        }
+        public void Update()
+        {
+            OpenGL gl = GLContainer.OpenGL;
+           
+        }
+    }
 
 }

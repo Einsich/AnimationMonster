@@ -121,4 +121,36 @@ namespace Engine
         public float[] ToArray() => new float[] { x, y,z,w };
     }
     */
+    public struct Vector4D
+    {
+        public float X, Y, Z, W;
+        public Vector4D(Assimp.Vector3D v) => (X, Y, Z, W) = (v.X, v.Y, v.Z, 0);
+        public Vector4D(Assimp.Vector3D v, float w) => (X, Y, Z, W) = (v.X, v.Y, v.Z, w);
+        public Vector4D(float x, float y, float z, float w) => (X, Y, Z, W) = (x, y, z, w);
+        public float this[int i]
+        {
+            get
+            {
+                float t = 0;
+                switch (i)
+                {
+                    case 0: t = X; break;
+                    case 1: t = Y; break;
+                    case 2: t = Z; break;
+                    case 3: t = W; break;
+                }
+                return t;
+            }
+            set
+            {
+                switch (i)
+                {
+                    case 0: X = value; break;
+                    case 1: Y = value; break;
+                    case 2: Z = value; break;
+                    case 3: W = value; break;
+                }
+            }
+        }
+    }
 }
