@@ -41,7 +41,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <UseVSHostingProcess>true</UseVSHostingProcess>
+    <UseVSHostingProcess>false</UseVSHostingProcess>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -94,19 +94,23 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Animation.cs" />
-    <Compile Include="Camera.cs" />
-    <Compile Include="SceneLoader.cs" />
-    <Compile Include="SkyBox.cs" />
-    <Compile Include="Transform.cs" />
-    <Compile Include="Vectors.cs" />
-    <Compile Include="ConsoleManager.cs" />
-    <Compile Include="ECS.cs" />
-    <Compile Include="EngineSystems.cs" />
-    <Compile Include="Mesh.cs" />
-    <Compile Include="ModelLoader.cs" />
-    <Compile Include="Texture2D.cs" />
-    <Page Include="MainWindow.xaml">
+    <Compile Include="CoreClasses\Animation.cs" />
+    <Compile Include="CoreClasses\Camera.cs" />
+    <Compile Include="CoreClasses\StaticClasses.cs" />
+    <Compile Include="CoreClasses\SceneLoader.cs" />
+    <Compile Include="CoreClasses\SkyBox.cs" />
+    <Compile Include="CoreClasses\Time.cs" />
+    <Compile Include="Systems\CameraControlSystem.cs" />
+    <Compile Include="Systems\InputSystem.cs" />
+    <Compile Include="Systems\SkyBoxRenderSystem.cs" />
+    <Compile Include="Systems\RenderSystem.cs" />
+    <Compile Include="CoreClasses\Transform.cs" />
+    <Compile Include="CoreClasses\Vectors.cs" />
+    <Compile Include="ApplicationManager\ConsoleManager.cs" />
+    <Compile Include="ApplicationManager\ECS.cs" />
+    <Compile Include="CoreClasses\Mesh.cs" />
+    <Compile Include="CoreClasses\Texture2D.cs" />
+    <Page Include="mainwindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -114,8 +118,8 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="MainWindow.xaml.cs">
-      <DependentUpon>MainWindow.xaml</DependentUpon>
+    <Compile Include="mainwindow.xaml.cs">
+      <DependentUpon>mainwindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
@@ -158,6 +162,7 @@
       <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\AssimpNet.4.1.0\build\AssimpNet.targets" Condition="Exists('..\packages\AssimpNet.4.1.0\build\AssimpNet.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

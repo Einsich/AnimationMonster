@@ -10,10 +10,6 @@ using SharpGL.WPF;
 using ECS;
 namespace Engine
 {
-    static class GLContainer
-    {
-        public static OpenGL OpenGL;
-    }
     /// <summary>
     /// Логика взаимодействия для MainWindow.xaml
     /// </summary>
@@ -21,8 +17,7 @@ namespace Engine
     {
         public MainWindow()
         {
-
-
+            ConsoleManager.Show();
         }
         public static float aspectRatio;
         void Initialize(OpenGL openGL)
@@ -30,7 +25,20 @@ namespace Engine
 
             aspectRatio = (float)Width / (float)Height;
             GLContainer.OpenGL = openGL;
-            EntitySystem.AddSystem<StartSystem>();
+            EntitySystem.AddSystem<Systems.RenderSystem>();
+            EntitySystem.AddSystem<Systems.CameraControlSystem>();
+            EntitySystem.AddSystem<Systems.SkyBoxRenderSystem>();
+            SceneLoader.LoadScene();
+            Focus();
+            KeyDown += Input.KeyDownEventListener;
+            KeyUp += Input.KeyUpEventListener;
+            MouseDown += Input.MouseDownEventListener;
+            MouseUp += Input.MouseUpEventListener;
+            MouseMove += Input.MouseMoveEventListener;
+            MouseEnter += Input.MouseEnterEventListener;
+            MouseLeave += Input.MouseLeaveEventListener;
+            MouseWheel += Input.MouseWheelEventListener;
+
         }
         private void OpenGLControl_Resized(object sender, OpenGLRoutedEventArgs args)
         {
@@ -41,6 +49,7 @@ namespace Engine
             OpenGL gl = args.OpenGL;
            
             gl.Clear(OpenGL.GL_COLOR_BUFFER_BIT | OpenGL.GL_DEPTH_BUFFER_BIT);
+            Time.Update();
             EntitySystem.Update();
             
         }

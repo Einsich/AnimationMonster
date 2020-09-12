@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Reflection;
 namespace ECS
@@ -19,14 +20,12 @@ namespace ECS
         public static List<Entity> GetEntities() => Entities;
         public static void DestroyComponent(T t, Entity owner)
         {
-            t.GetType().GetMethod("Destructor")?.Invoke(t, null);
             DestroyComponents.Push(t);
             Entities.Remove(owner);
         }
         public static T GetComponent(Entity owner) 
         {
             T t = DestroyComponents.Count == 0 ? new T() : DestroyComponents.Pop();
-            t.GetType().GetMethod("Constructor")?.Invoke(t, null);
             Entities.Add(owner);
             return t;
         }
@@ -219,9 +218,9 @@ namespace ECS
     public abstract class BaseSystem:IComparable<BaseSystem>
     {
         readonly int Order;
-        public Type[] types;
+        public Type[][] types;
 
-        public MethodInfo UpdateMethod;
+        public MethodInfo[] UpdateMethods;
         /// <summary>
         /// 
         /// </summary>
@@ -229,8 +228,10 @@ namespace ECS
         public BaseSystem(int order)
         {
             Order = order;
-            UpdateMethod = GetType().GetMethod("Update");
-            types = Array.ConvertAll(UpdateMethod.GetParameters(), (x) => x.ParameterType);
+            UpdateMethods = GetType().GetMethods().Where((m) => m.Name == "Update").ToArray();
+            types = new Type[UpdateMethods.Length][];
+            for (int i = 0; i < UpdateMethods.Length; i++)
+                types[i] = Array.ConvertAll(UpdateMethods[i].GetParameters(), (x) => x.ParameterType);
         }
 
         public int CompareTo(BaseSystem other)
@@ -329,8 +330,8 @@ namespace ECS
         }
         static void UpdateSystem(BaseSystem system)
         {
-            if (system.UpdateMethod != null)
-                Apply(system.types, system.UpdateMethod, system);
+            for (int i = 0; i < system.UpdateMethods.Length; i++)
+                Apply(system.types[i], system.UpdateMethods[i], system);
         }
         /// <summary>
         /// Query запрос. Можно производить операции над нужными сущностями с нужными наборами компонент в любом месте.

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Numerics;
 
 namespace Engine
 {
@@ -15,34 +14,14 @@ namespace Engine
         public static float Cos(float x) => (float)Math.Cos(x);
         public static float Acos(float cos) => (float)Math.Acos(cos);
         public static float PI => (float)(Math.PI);
-        public static float RadianToDegrees(float radian) => radian / PI * 180;
-        public static float DegreesToRadian(float degrees) => degrees / 180f * PI;
+        public static float RadToDeg =  180f / PI;
+        public static float DegToRad =  PI / 180f;
 
-    }
-    static class Extensions
-    {
-        /// <summary>
-        /// Возвращает ориентированную площадь параллепипеда, если поворот от a к b положительный, то и плозадь положительная
-        /// </summary>
-        public static float Square(this Vector2 a, Vector2 b) => a.X * b.Y - a.Y * b.X;
-        public static float[] ToArray(this Vector2 a) => new float[] { a.X, a.Y };
-        public static float[] ToArray(this Vector3 a) => new float[] { a.X,a.Y,a.Z };
-        public static float[] ToArray(this Matrix4x4 m) => new float[] {
-            m.M11, m.M12, m.M13, m.M14,
-            m.M21, m.M22, m.M23, m.M24,
-            m.M31, m.M32, m.M33, m.M34,
-            m.M41, m.M42, m.M43, m.M44};
-        public static float[] To3x3Array(this Matrix4x4 m) => new float[] {
-            m.M11, m.M12, m.M13,
-            m.M21, m.M22, m.M23,
-            m.M31, m.M32, m.M33};
-        public static float[] ToArray(this Assimp.Vector3D vector, int size = 3)
-        {
-            if (size == 2)
-                return new float[] { vector.X, vector.Y };
-            else
-                return new float[] { vector.X, vector.Y, vector.Z };
-        }
+        public static float Clamp01(float x) => x < 0 ? 0 : (x < 1 ? x : 1);
+        public static float Clamp0(float x) => x < 0 ? 0 : x;
+        public static float Clamp1(float x) => (x < 1 ? x : 1);
+
+
     }
 
     /*public struct Vector2

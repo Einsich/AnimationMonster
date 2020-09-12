@@ -30,13 +30,13 @@ public static class ConsoleManager
     /// </summary>
     public static void Show()
     {
-        //#if DEBUG
+        #if DEBUG
         if (!HasConsole)
         {
             AllocConsole();
             InvalidateOutAndError();
         }
-        //#endif
+        #endif
     }
 
     /// <summary>
@@ -44,13 +44,13 @@ public static class ConsoleManager
     /// </summary>
     public static void Hide()
     {
-        //#if DEBUG
+        #if DEBUG
         if (HasConsole)
         {
             SetOutAndErrorNull();
             FreeConsole();
         }
-        //#endif
+        #endif
     }
 
     public static void Toggle()

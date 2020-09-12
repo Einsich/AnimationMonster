@@ -7,6 +7,8 @@
         <wpf:OpenGLControl OpenGLDraw="OpenGLControl_OpenGLDraw"
                                OpenGLInitialized="OpenGLControl_OpenGLInitialized"
                                Resized="OpenGLControl_Resized"
-                               DrawFPS="True" RenderContextType="FBO"/>
+                               DrawFPS="True"
+                               RenderContextType="FBO"
+                               Focusable="True"/>
     </Grid>
 </Window>
