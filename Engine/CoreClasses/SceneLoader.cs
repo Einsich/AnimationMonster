@@ -23,6 +23,13 @@ namespace Engine
                 model.GetComponent<MeshRenderer>().mesh = new ProcessedMesh(s, 0);
                 model.GetComponent<Transform>();
             }
+            {
+                Entity cube = Entity.Create<MeshRenderer, Transform>();
+                cube.GetComponent<MeshRenderer>().mesh = ProcessedMesh.Cube();
+                cube.GetComponent<Transform>().position = new System.Numerics.Vector3(100, 0, 0);
+                cube.GetComponent<Transform>().SetScale(5);
+
+            }
             Texture2D texture = new Texture2D();
             TextureContainer.AddTexture("mainTexture", texture);
             texture.Create(GLContainer.OpenGL);

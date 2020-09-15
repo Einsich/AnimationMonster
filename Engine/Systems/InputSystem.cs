@@ -39,7 +39,7 @@ namespace Engine
             if (keys.Length <= i)
                 throw new Exception("Key array is small for key " + key.ToString());
             KeyState state = keys[i];
-            float dt = (Time.time - state.time) * 2.0f;
+            float dt = (Time.time - state.time) * 5.0f;
             return state.pressed ? Mathf.Clamp1(dt) : Mathf.Clamp0(1 - dt);
 
         }

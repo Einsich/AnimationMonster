@@ -23,6 +23,7 @@ namespace Engine.Systems
             
 
         }
+
         public void Update(MeshRenderer meshRenderer, Transform transform)
         {
 
@@ -33,18 +34,19 @@ namespace Engine.Systems
             shader.Bind(gl);
 
             //  Set the light position.
-            shader.SetUniform3(gl, "LightPosition", 0.25f, 0.25f, 10f);
             Camera camera = null;
             Transform cameraTransform = null;
             EntitySystem.FirstQuery(new Action<Camera, Transform, MainCameraTag>((cam, tr, tag) => { camera = cam; cameraTransform = tr; }));
             if (camera == null)
                 return;
-            //  Set the matrices.
-            Matrix4x4 proj;
-            Matrix4x4.Invert(cameraTransform.GetMatrix, out proj);
-            shader.SetUniformMatrix4(gl, "Projection", (camera.GetProjection).ToArray());
-            shader.SetUniformMatrix4(gl, "Modelview", (proj * transform.GetMatrix).ToArray());
-            shader.SetUniformMatrix3(gl, "NormalMatrix", transform.GetMatrix.To3x3Array());
+
+            Matrix4x4 view = cameraTransform.GetMatrix, tran = transform.GetMatrix;
+            Matrix4x4.Invert(view, out view);
+
+            shader.SetUniformMatrix4(gl, "ViewProjection", (view * camera.GetProjection).ToArray());
+            shader.SetUniformMatrix4(gl, "Model", (tran).ToArray());
+            shader.SetUniformMatrix3(gl, "NormalMatrix", tran.To3x3Array());
+
             if (mesh.hasAnimation)
             {
                 mesh.ProcessAnimation();
@@ -54,9 +56,27 @@ namespace Engine.Systems
             texture.Bind(gl);
             gl.Uniform1(gl.GetUniformLocation(shader.ShaderProgramObject, "mainTex"), 0);
 
+
+            shader.SetUniform3(gl, "LightPosition", 0.25f, 15f, 10f);
+            if (mesh.hasUvs)
+            {
+                shader.SetUniform3(gl, "DiffuseMaterial", -1, -1, -1);
+            }
+            else
+            {
+                shader.SetUniform3(gl, "DiffuseMaterial", 0, 0.1f, 0.3f);
+                shader.SetUniform3(gl, "AmbientMaterial", 0, 0.2f, 0.5f);
+                shader.SetUniform3(gl, "SpecularMaterial", 0.3f, 0.3f, 0.3f);
+                var cam = cameraTransform.position;
+                shader.SetUniform3(gl, "CameraPosition", cam.X, cam.Y, cam.Z);
+                shader.SetUniform1(gl, "Shininess", 0.1f);
+                shader.SetUniform1(gl, "Reflectance", 0.1f);
+            }
+
+
             var vertexBufferArray = mesh.vertexBufferArray;
             vertexBufferArray.Bind(gl);
-            gl.DrawArrays(OpenGL.GL_TRIANGLES, 0, mesh.vertexCount);
+            gl.DrawArrays(OpenGL.GL_TRIANGLES, 0, mesh.vertexCount); 
 
             vertexBufferArray.Unbind(gl);
 
@@ -66,6 +86,15 @@ namespace Engine.Systems
 
         public override void End()
         {
+        }
+        public void PrintMat(Matrix4x4 m)
+        {
+            var t = m.ToArray();
+            string s = "";
+            for (int i = 0; i < 4; i++)
+                for (int j = 0; j < 4; j++)
+                    s += t[i * 4 + j].ToString("N2") + (j == 3 ? "\n" : " ");
+            Console.WriteLine(s);
         }
     }
 }

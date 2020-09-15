@@ -9,6 +9,7 @@ namespace Engine
     public class ProcessedMesh
     {
         public int vertexCount { get; private set; }
+        public bool hasUvs { get; private set; } = false;
         public VertexBufferArray vertexBufferArray;
         private Mesh mesh;
         public bool hasAnimation => animation != null;
@@ -16,6 +17,50 @@ namespace Engine
         private Dictionary<string, int> boneMap, nodeMap;
         public float[] boneTransform;
         private Node rootNode;
+        public ProcessedMesh(List<Face> Faces, List<Vector3D> Vertices, List<Vector3D> Normals, List<Vector3D> uv)
+        {
+            OpenGL gl = GLContainer.OpenGL;
+
+            vertexBufferArray = new VertexBufferArray();
+            vertexBufferArray.Create(gl);
+            vertexBufferArray.Bind(gl);
+            var verticesVertexBuffer = new VertexBuffer();
+            verticesVertexBuffer.Create(gl);
+            verticesVertexBuffer.Bind(gl);
+            int stride = 3;
+
+
+            verticesVertexBuffer.SetData(gl, VertexAttributes.Position,
+                                 Extract(Faces, Vertices, 3),
+                                 false, stride);
+            if (Normals != null)
+            {
+                var normalsVertexBuffer = new VertexBuffer();
+                normalsVertexBuffer.Create(gl);
+                normalsVertexBuffer.Bind(gl);
+                stride = 3;
+                normalsVertexBuffer.SetData(gl, VertexAttributes.Normal,
+                                             Extract(Faces, Normals, 3),
+                                            false, stride);
+                normalsVertexBuffer.Unbind(gl);
+            }
+
+            if (uv != null)
+            {
+                hasUvs = true;
+                var texCoordsVertexBuffer = new VertexBuffer();
+                texCoordsVertexBuffer.Create(gl);
+                texCoordsVertexBuffer.Bind(gl);
+                stride = 2;
+                texCoordsVertexBuffer.SetData(gl, VertexAttributes.TexCoord,
+                                               Extract(Faces, uv, stride),
+                                              false, stride);
+                texCoordsVertexBuffer.Unbind(gl);
+            }
+
+            vertexCount = Faces.Count * 3;
+            verticesVertexBuffer.Unbind(gl);
+        }
         public ProcessedMesh(Scene scene, int index)
         {
             mesh = scene.Meshes[index];
@@ -47,6 +92,7 @@ namespace Engine
 
             if (mesh.HasTextureCoords(0))
             {
+                hasUvs = true;
                 var texCoordsVertexBuffer = new VertexBuffer();
                 texCoordsVertexBuffer.Create(gl);
                 texCoordsVertexBuffer.Bind(gl);
@@ -189,6 +235,39 @@ namespace Engine
              array[ind + 12], array[ind + 13], array[ind + 14], array[ind + 15]) =
              (m.A1, m.B1, m.C1, m.D1, m.A2, m.B2, m.C2, m.D2,
              m.A3, m.B3, m.C3, m.D3, m.A4, m.B4, m.C4, m.D4);
+        }
+        static ProcessedMesh cube;
+        public static ProcessedMesh Cube()
+        {
+            if(cube == null)
+            {
+                List<Vector3D> vertecs = new List<Vector3D>();
+                List<Vector3D> normals = new List<Vector3D>();
+                List<Face> faces = new List<Face>();
+                for (int face = 0; face < 3; face++)
+                    for (int d = -1; d <= 1; d += 2) 
+                    {
+                        Vector3D normal = new Vector3D();
+                        normal[face] = d;
+                        int ind = vertecs.Count;
+                        float a = -1, b = -1;
+                        for (int i = 0; i < 4; i++)
+                        {
+                            Vector3D v = new Vector3D();
+                            v[face] = d;
+                            v[(face + 1) % 3] = a;
+                            v[(face + 2) % 3] = b;
+                            (a, b) = (-b * d, a * d);
+                            vertecs.Add(v * 50f);
+                            normals.Add(normal);
+                        }
+                        faces.Add(new Face(new int[] { ind, ind + 1, ind + 2 }));
+                        faces.Add(new Face(new int[] { ind, ind + 2, ind + 3 }));
+                    }
+
+                cube = new ProcessedMesh(faces, vertecs, normals, null);
+            }
+            return cube;
         }
     }
     public class MeshRenderer

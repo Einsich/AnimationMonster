@@ -15,7 +15,8 @@ namespace Engine.Systems
             Entity camera = Entity.Create<Camera>();
             camera.GetComponent<Camera>().CreatePerspective(Mathf.DegToRad * 90, MainWindow.aspectRatio, 0.01f, 100000);
             camera.AddComponent<Transform>().position = new Vector3(0, 100, 150);
-            camera.AddComponent<ArcballCamera>().Init(150, 0, 0, new Vector3(0, 100, 0));
+            //camera.AddComponent<ArcballCamera>().Init(150, 0, 0, new Vector3(0, 100, 0));
+            camera.AddComponent<FreeCamera>();
             camera.AddComponent<MainCameraTag>();
 
             Input.KeyAction[Key.Space] += LockMainCamera;
