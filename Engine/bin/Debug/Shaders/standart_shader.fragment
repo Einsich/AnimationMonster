@@ -26,7 +26,7 @@ void main()
     vec3 color = AmbientMaterial + df * Diffuse + sf * SpecularMaterial;
     vec3 Reflect = reflect(-CameraPosition + WorldPosition, N);
     vec3 sky = texture(skybox, normalize(Reflect)).rgb;
-    color += sky;
+    color += sky * Reflectance;
     if (Diffuse.x < 0)
     	color += texture(mainTex, UV).rgb ;
     FragColor = vec4(color, 1.0);

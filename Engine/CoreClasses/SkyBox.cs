@@ -18,7 +18,7 @@ namespace Engine
         {
             OpenGL gl = GLContainer.OpenGL;
             string[] faces = { "posx.jpg", "negx.jpg", "posy.jpg", "negy.jpg", "posz.jpg", "negz.jpg" };
-            cubeMap.Create(gl, faces, false);
+            cubeMap.Create(gl, faces, true);
             bufferArray.Create(gl);
             bufferArray.Bind(gl);
             VertexBuffer vertexBuffer = new VertexBuffer();

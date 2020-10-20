@@ -108,7 +108,7 @@ namespace SharpGL.Texture
 
 
                 if (mipmap)
-                    gl.Build2DMipmaps(OpenGL.GL_TEXTURE_2D, OpenGL.GL_RGBA,
+                    gl.Build2DMipmaps(OpenGL.GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, OpenGL.GL_RGBA,
                         image.Width, image.Height, OpenGL.GL_BGRA, OpenGL.GL_UNSIGNED_BYTE,
                         bitmapData.Scan0);
                 else
@@ -121,6 +121,14 @@ namespace SharpGL.Texture
             }
             if (mipmap)
             {
+                //gl.GenerateMipmapEXT(OpenGL.GL_TEXTURE_CUBE_MAP);
+
+                gl.TexParameter(OpenGL.GL_TEXTURE_CUBE_MAP, OpenGL.GL_TEXTURE_MIN_FILTER, OpenGL.GL_LINEAR_MIPMAP_LINEAR);
+                gl.TexParameter(OpenGL.GL_TEXTURE_CUBE_MAP, OpenGL.GL_TEXTURE_MAG_FILTER, OpenGL.GL_LINEAR);
+               // gl.TexParameter(OpenGL.GL_TEXTURE_CUBE_MAP, OpenGL.GL_AUTO_GENERATE_MIPMAP, OpenGL.GL_TRUE);
+                gl.TexParameter(OpenGL.GL_TEXTURE_CUBE_MAP, OpenGL.GL_TEXTURE_WRAP_S, OpenGL.GL_CLAMP_TO_EDGE);
+                gl.TexParameter(OpenGL.GL_TEXTURE_CUBE_MAP, OpenGL.GL_TEXTURE_WRAP_T, OpenGL.GL_CLAMP_TO_EDGE);
+                gl.TexParameter(OpenGL.GL_TEXTURE_CUBE_MAP, OpenGL.GL_TEXTURE_WRAP_R, OpenGL.GL_CLAMP_TO_EDGE);
             }
             else
             {

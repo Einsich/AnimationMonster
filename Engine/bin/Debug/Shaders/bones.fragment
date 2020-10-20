@@ -1,0 +1,8 @@
+out vec4 FragColor;
+
+uniform vec3 DiffuseMaterial;
+
+void main()
+{
+    FragColor = vec4(DiffuseMaterial, 1.0);
+}

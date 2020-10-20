@@ -15,6 +15,7 @@ namespace Engine
         public Quaternion QuaternionRotation => Quaternion.CreateFromRotationMatrix(transform);
 
         public void SetScale(float s) => scale = new Vector3(s);
+        public void SetScale(Vector3 s) => scale = (s);
         public void Rotate(Quaternion rotation) =>        
             transform = Matrix4x4.Transform(transform, rotation);
         public void SetRotation(float yaw, float pitch, float roll)

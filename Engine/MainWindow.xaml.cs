@@ -26,6 +26,7 @@ namespace Engine
             aspectRatio = (float)Width / (float)Height;
             GLContainer.OpenGL = openGL;
             EntitySystem.AddSystem<Systems.RenderSystem>();
+            EntitySystem.AddSystem<Systems.BoneRenderSystem>();
             EntitySystem.AddSystem<Systems.CameraControlSystem>();
             EntitySystem.AddSystem<Systems.SkyBoxRenderSystem>();
             SceneLoader.LoadScene();

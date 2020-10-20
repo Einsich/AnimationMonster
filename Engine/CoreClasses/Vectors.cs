@@ -1,5 +1,5 @@
 ﻿using System;
-
+using Assimp;
 namespace Engine
 {
     class Mathf
@@ -17,10 +17,14 @@ namespace Engine
         public static float RadToDeg =  180f / PI;
         public static float DegToRad =  PI / 180f;
 
+        public static float Clamp(float x, float a, float b) => x < a ? a : (x < b ? x : b);
         public static float Clamp01(float x) => x < 0 ? 0 : (x < 1 ? x : 1);
         public static float Clamp0(float x) => x < 0 ? 0 : x;
         public static float Clamp1(float x) => (x < 1 ? x : 1);
-
+        public static Vector3D Lerp(Vector3D a, Vector3D b, float t)
+        {
+            return a * (1 - t) + b * t;
+        }
 
     }
 

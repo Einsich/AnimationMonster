@@ -1,0 +1,79 @@
+Hips hip
+Spine1 abdomen
+Spine2 abdomen
+Spine3 chest
+Spine4 chest
+
+Neck neck
+Head head
+HeadTip 
+
+RightShoulder rCollar
+RightArm rShldr
+RightForeArm rForeArm
+RightHand rHand
+RightFinger1Metacarpal rThumb1
+RightFinger1Proximal rThumb2
+RightFinger1Distal 
+RightFinger1Tip 
+RightFinger5Metacarpal rPinky1
+RightFinger5Proximal rPinky2
+RightFinger5Medial 
+RightFinger5Distal 
+RightFinger5Tip 
+RightFinger4Metacarpal rRing1
+RightFinger4Proximal rRing2
+RightFinger4Medial 
+RightFinger4Distal 
+RightFinger4Tip 
+RightFinger3Metacarpal rMid1
+RightFinger3Proximal rMid2
+RightFinger3Medial 
+RightFinger3Distal 
+RightFinger3Tip 
+RightFinger2Metacarpal rIndex1
+RightFinger2Proximal rIndex2
+RightFinger2Medial 
+RightFinger2Distal 
+RightFinger2Tip 
+
+LeftShoulder lCollar
+LeftArm lShldr
+LeftForeArm lForeArm
+LeftHand lForeArm
+LeftFinger5Metacarpal rPinky1
+LeftFinger5Proximal rPinky2
+LeftFinger5Medial 
+LeftFinger5Distal 
+LeftFinger5Tip 
+LeftFinger4Metacarpal rRing1
+LeftFinger4Proximal rRing2
+LeftFinger4Medial 
+LeftFinger4Distal 
+LeftFinger4Tip 
+LeftFinger3Metacarpal rMid1
+LeftFinger3Proximal rMid2
+LeftFinger3Medial 
+LeftFinger3Distal 
+LeftFinger3Tip 
+LeftFinger2Metacarpal lIndex1
+LeftFinger2Proximal lIndex2
+LeftFinger2Medial 
+LeftFinger2Distal 
+LeftFinger2Tip 
+LeftFinger1Metacarpal lThumb1
+LeftFinger1Proximal lThumb2
+LeftFinger1Distal 
+LeftFinger1Tip 
+
+RightThigh rThigh
+RightShin rShin 
+RightFoot rFoot
+RightToe 
+RightToeTip 
+
+LeftThigh lThigh
+LeftShin lShin
+LeftFoot lFoot
+LeftToe 
+LeftToeTip 

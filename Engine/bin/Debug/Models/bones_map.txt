@@ -1,0 +1,85 @@
+Hips Hips
+//right leg
+RightThigh RightUpLeg
+RightShin RightLeg
+RightFoot RightFoot
+RightToe RightToes
+RightToeTip RightToes_End
+//left leg
+LeftThigh LeftUpLeg
+LeftShin LeftLeg
+LeftFoot LeftFoot
+LeftToe LeftToes
+LeftToeTip LeftToes_End
+//spine
+Spine1 Spine
+Spine3 Spine1
+Spine4 Spine2
+//right hand
+RightShoulder RightShoulder
+RightArm RightArm
+RightForeArm RightForeArm
+RightHand RightHand
+
+RightFinger1Metacarpal RightHandIndex1
+RightFinger1Proximal RightHandIndex2
+RightFinger1Distal RightHandIndex3
+RightFinger1Tip RightHandIndex_End
+
+RightFinger2Metacarpal RightHandMiddle1
+RightFinger2Proximal RightHandMiddle2
+RightFinger2Distal RightHandMiddle3
+RightFinger2Tip RightHandMiddle_End
+
+RightFinger3Metacarpal RightHandPinky1
+RightFinger3Proximal RightHandPinky2
+RightFinger3Distal RightHandPinky3
+RightFinger3Tip RightHandPinky_End
+
+RightFinger4Metacarpal RightHandRing1
+RightFinger4Proximal RightHandRing2
+RightFinger4Distal RightHandRing3
+RightFinger4Tip RightHandRing_End
+
+RightFinger5Metacarpal RightHandThumb1
+RightFinger5Proximal RightHandThumb2
+RightFinger5Distal RightHandThumb3
+RightFinger5Tip RightHandThumb_End
+//left hand
+LeftShoulder LeftShoulder
+LeftArm LeftArm
+LeftForeArm LeftForeArm
+LeftHand LeftHand
+
+LeftFinger1Metacarpal LeftHandIndex1
+LeftFinger1Proximal LeftHandIndex2
+LeftFinger1Distal LeftHandIndex3
+LeftFinger1Tip LeftHandIndex_End
+
+LeftFinger2Metacarpal LeftHandMiddle1
+LeftFinger2Proximal LeftHandMiddle2
+LeftFinger2Distal LeftHandMiddle3
+LeftFinger2Tip LeftHandMiddle_End
+
+LeftFinger3Metacarpal LeftHandPinky1
+LeftFinger3Proximal LeftHandPinky2
+LeftFinger3Distal LeftHandPinky3
+LeftFinger3Tip LeftHandPinky_End
+
+LeftFinger4Metacarpal LeftHandRing1
+LeftFinger4Proximal LeftHandRing2
+LeftFinger4Distal LeftHandRing3
+LeftFinger4Tip LeftHandRing_End
+
+LeftFinger5Metacarpal LeftHandThumb1
+LeftFinger5Proximal LeftHandThumb2
+LeftFinger5Distal LeftHandThumb3
+LeftFinger5Tip LeftHandThumb_End
+//head
+Neck Neck
+Head Head
+HeadVertex Head_End
+
+
+
+

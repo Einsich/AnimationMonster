@@ -2,14 +2,17 @@
 in vec2 UV;
 in vec3 EyespaceNormal;
 in vec3 Diffuse;
+in vec3 WorldPosition;
 out vec4 FragColor;
 
 uniform vec3 LightPosition;
 uniform vec3 AmbientMaterial;
 uniform vec3 SpecularMaterial;
 uniform float Shininess;
+uniform float Reflectance;
+uniform vec3 CameraPosition;
 
-uniform sampler2D mainTex;
+uniform samplerCube skybox;
 void main()
 {
     vec3 N = normalize(EyespaceNormal);
@@ -21,6 +24,8 @@ void main()
     float sf = max(0.0, dot(N, H));
     sf = pow(sf, Shininess);
     vec3 color = AmbientMaterial + df * Diffuse + sf * SpecularMaterial;
-    color = texture(mainTex, UV).rgb ;//+ vec3(1,0,0)
+    vec3 Reflect = reflect(-CameraPosition + WorldPosition, N);
+    vec3 sky = texture(skybox, normalize(Reflect)).rgb;
+    color += sky;
     FragColor = vec4(color, 1.0);
 }
