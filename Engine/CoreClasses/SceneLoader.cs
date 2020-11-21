@@ -7,6 +7,9 @@ using SharpGL.Shaders;
 using System.IO;
 using Assimp;
 using ECS;
+using System.Windows;
+using Engine.CoreClasses;
+
 namespace Engine
 {
     static class SceneLoader
@@ -14,11 +17,17 @@ namespace Engine
         public static void LoadScene()
         {
             AssimpContext importer = new Assimp.AssimpContext();
-            LoadRococoAnimations(importer);
+            CreateTerrein();
+            //LoadRococoAnimations(importer);
             {
-                AddCube(new System.Numerics.Vector3(0, -100, 0), new System.Numerics.Vector3(200,1,200));
+                //AddCube(new System.Numerics.Vector3(0, -100, 0), new System.Numerics.Vector3(200,1,200));
 
             }
+
+            
+            ShaderContainer.AddShader("height_map", new Dictionary<uint, string>()
+            { { VertexAttributes.Position, "Position" }});
+
             ShaderContainer.AddShader("bones", new Dictionary<uint, string>()
             { { VertexAttributes.Position, "Position" }});
 
@@ -33,6 +42,12 @@ namespace Engine
 
             ShaderContainer.AddShader("sky_box",  new Dictionary<uint, string>() { { VertexAttributes.Position, "Position" }});
 
+        }
+        static void CreateTerrein()
+        {
+            Entity terrain = Entity.Create<HeightMap, Transform>();
+            terrain.GetComponent<HeightMap>().CreateTerrain(1024, 1024, 1.5f, 1000f);
+            terrain.GetComponent<Transform>().position = new System.Numerics.Vector3(0, -10, 0);
         }
         static void LoadAnimations(AssimpContext importer)
         {
@@ -251,22 +266,58 @@ namespace Engine
                 for (int i = 0; i < node.ChildCount; i++)
                     normalizeDFS(node.Children[i], d + 1);
             }
-            void dfs(Node node, Node animNode, Matrix4x4 parent, Matrix4x4 animParent)
+            void dfs(Node node, Node animNode, Matrix4x4 parent, Matrix4x4 animParent, Matrix3x3 correction)
             {
                 string name = node.Name;
-                
+
                 //Console.WriteLine($"{name} {(animNode != null ? animNode.Name : "null")}");
+                if (animNode != null)
+                {
+
+                }
                 
+
+
+                Matrix4x4 nodeTransform = node.Transform;
+                Matrix4x4 animTransform = animNode != null ? animNode.Transform :  nodeTransform ;
                 parent = node.Transform * parent;
-                animParent = (animNode != null ? animNode.Transform : node.Transform) * animParent;
+                animParent = animTransform * animParent;
+                /*
+                Matrix3x3 tr = node.Transform;
+                Vector3D d = node.Transform.Translation();
+                tr.Inverse();
+                Matrix4x4 t = new Matrix4x4(tr);
+                t = Matrix4x4.Identity;
+                t.SetTranslation(-d );
+                node.Transform = t;
+                */
+                //        Console.WriteLine($"{node.Name}\nmodelTree\n{parent.ToWriteLine()}animTree\n{animParent.ToWriteLine()}\n");
                 if (nodeMap.ContainsKey(node.Name))
                 {
                     int bone = nodeMap[node.Name];
-                    Matrix3x3 m = new Matrix3x3(parent);
-                    Matrix3x3 a = new Matrix3x3(animParent);
-                    a.Inverse();
-                    Matrix4x4 t = new Matrix4x4(m * a);
-                    meshToBone[bone] *= t;
+                    if (animNode != null)
+                    {
+                        /*
+                        Matrix3x3 m = new Matrix3x3(parent);
+                        Matrix3x3 a = new Matrix3x3(animParent);
+                        Vector3D offset = parent.Translation() - animParent.Translation();
+                        a.Inverse();
+                        Matrix4x4 t = new Matrix4x4(m * a) * Matrix4x4.FromTranslation(offset);
+                        */
+                        Matrix4x4 m = (parent);
+                        Matrix4x4 a = (animParent);
+                        a.Inverse();
+                        Matrix4x4 t = a * m;
+                        t.SetTranslation(new Vector3D(0));
+                        meshToBone[bone] *= t;
+                        correction = t;
+                    }
+                    else
+                    {
+                        //meshToBone[bone] *= correction;
+                    }
+                    
+                    //correction.Inverse();
                 }
 
                 for (int i = 0; i < animation.NodeAnimationChannelCount && animNode != null; i++)
@@ -276,16 +327,23 @@ namespace Engine
                         break;
                     }
                 for (int i = 0; i < node.ChildCount; i++)
-                    dfs(node.Children[i], BoneRender.GetNextAnimTreeChild(node, animNode, i), parent, animParent);
+                    dfs(node.Children[i], BoneRender.GetNextAnimTreeChild(node, animNode, i), parent, animParent, correction);
             }
             normalizeDFS(animRoot, 0);
-            dfs(root, animRoot, Matrix4x4.Identity, Matrix4x4.Identity);
+            dfs(root, animRoot, Matrix4x4.Identity, Matrix4x4.Identity, Matrix4x4.Identity);
             return (map, meshToBone);
         }
         static Node FindHips(Node node)
         {
+            Matrix4x4 transform = node.Transform;
             while (node.ChildCount > 0 && node.Name != "Hips")
+            {
                 node = node.Children[0];
+                transform = node.Transform * transform;
+            }
+            transform = node.Transform * transform;
+            transform.SetTranslation(new Vector3D(0));
+            node.Transform = transform;
             return node;
         }
         static void AddCube(System.Numerics.Vector3 position, float scale) => AddCube(position, new System.Numerics.Vector3(scale));

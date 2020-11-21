@@ -103,6 +103,7 @@
     <Compile Include="CoreClasses\Animation.cs" />
     <Compile Include="CoreClasses\Camera.cs" />
     <Compile Include="CoreClasses\DebugDrawing.cs" />
+    <Compile Include="CoreClasses\HeightMap.cs" />
     <Compile Include="CoreClasses\StaticClasses.cs" />
     <Compile Include="CoreClasses\SceneLoader.cs" />
     <Compile Include="CoreClasses\SkyBox.cs" />

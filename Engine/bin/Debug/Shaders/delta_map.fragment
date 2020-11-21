@@ -1,0 +1,37 @@
+#version 330
+in vec2 UV;
+out vec4 FragColor;
+
+uniform vec4 heightMapSize;
+uniform vec4 heightMapProperty;
+uniform sampler2D heightMap;
+#define DIR 4
+vec4 GetWeightInfo(vec2 uv)
+{
+    vec2 dx = vec2(heightMapSize.x, 0), dy = vec2(0, heightMapSize.y);
+    vec2 duv[DIR] = vec2[DIR](dx , dy, -dx, -dy);
+
+    vec4 data0 = texture(heightMap, uv);
+    float h0 = data0.x, s0 = data0.y, w0 = data0.z;
+    float r0 = h0 + s0 + w0;
+
+    float max_out_sw = 0;
+    float out_sw_factor = 0;
+    for (int i = 0; i < DIR; ++i)
+    {
+		float r = dot(texture(heightMap, uv + duv[i]).xyz, vec3(1));
+		float d = r0 - r;
+		if (d > 0)
+			max_out_sw = max(max_out_sw, min(d , s0 + w0));
+    }
+    if (max_out_sw > 0 && s0 + w0 > 1e-5)
+	    out_sw_factor = max_out_sw / (s0 + w0);
+	
+    return vec4(h0, s0, w0, out_sw_factor);
+}
+void main()
+{
+    FragColor = GetWeightInfo(UV);
+}
+
+

@@ -1,0 +1,58 @@
+#version 420
+in vec2 UV;
+in vec3 WorldPosition;
+out vec4 FragColor;
+
+uniform vec3 LightPosition;
+uniform vec3 AmbientMaterial;
+uniform vec3 SpecularMaterial;
+uniform float Shininess;
+uniform vec3 CameraPosition;
+
+uniform vec4 heightMapSize;
+uniform vec4 heightMapProperty;
+layout(binding=0) uniform sampler2D heightMap;
+layout(binding=1) uniform sampler2D gradMap;
+
+uniform samplerCube skybox;
+
+float GetHeight(vec2 uv)
+{
+    return texture(heightMap, uv).r * heightMapProperty.x;
+}
+#define DIR 8
+vec3 GenerateNormal(vec2 uv)
+{
+    vec2 dx = vec2(heightMapSize.x, 0);
+    vec2 dy = vec2(0, heightMapSize.y);
+    const float rsqrt2 = 1 / sqrt(2);
+    vec2 d[DIR] = vec2[DIR](dx , (dx + dy) * rsqrt2, dy, (-dx + dy) * rsqrt2, -dx, (-dx - dy) * rsqrt2, -dy, (dx -dy) * rsqrt2);
+    float h[DIR];
+    for (int i = 0; i < DIR; ++i)
+        h[i] = GetHeight(uv + d[i]);
+    
+    float dhdx = 1 * ((h[1] - h[3]) + 2 * (h[0] - h[4]) + (h[7] - h[5])) * 0.25;
+    float dhdz = 1 * ((h[5] - h[3]) + 2 * (h[6] - h[2]) + (h[7] - h[1])) * 0.25;
+    vec3 vx = vec3(heightMapProperty.y, dhdx, 0);
+    vec3 vz = vec3(0, dhdz, heightMapProperty.y);
+    return -normalize(cross(vx, vz));
+}
+void main()
+{
+    vec2 uv = UV ;
+    vec3 N = normalize(GenerateNormal(uv));
+    vec3 L = normalize(LightPosition);
+    vec3 E = vec3(0, 0, 1);
+    vec3 H = normalize(L + E);
+    
+    float df = max(0.0, dot(N, L));
+    float sf = max(0.0, dot(N, H));
+    sf = pow(sf, Shininess);
+    vec4 v = texture(heightMap, uv);
+
+    vec4 v0 = texture(gradMap, uv);
+    float weigths= dot(v0, vec4(1));
+    vec3 water = v.b * vec3(0, 0, 1) * 100;
+    vec3 color = water +  df * vec3(1,1,1) * 0.5;
+    FragColor = vec4(color, 1.0);
+}

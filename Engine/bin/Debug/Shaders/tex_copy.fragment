@@ -1,0 +1,11 @@
+#version 420
+in vec2 UV;
+out vec4 FragColor;
+
+layout(binding=0) uniform sampler2D tex;
+
+void main()
+{
+    float h = texture(tex, UV).r;
+    FragColor = vec4(pow(h*0.5,0.8),0,0.2,0);
+}

@@ -10,6 +10,8 @@ using SharpGL.Texture;
 using Assimp;
 using ECS;
 using Matrix4x4 = System.Numerics.Matrix4x4;
+using Engine.CoreClasses;
+
 namespace Engine.Systems
 {
     public class RenderSystem : BaseSystem
@@ -34,9 +36,7 @@ namespace Engine.Systems
             shader.Bind(gl);
 
             //  Set the light position.
-            Camera camera = null;
-            Transform cameraTransform = null;
-            EntitySystem.FirstQuery(new Action<Camera, Transform, MainCameraTag>((cam, tr, tag) => { camera = cam; cameraTransform = tr; }));
+            (Camera camera, Transform cameraTransform) = Camera.mainCamera;
             if (camera == null)
                 return;
 
@@ -86,9 +86,7 @@ namespace Engine.Systems
             shader.Bind(gl);
 
             //  Set the light position.
-            Camera camera = null;
-            Transform cameraTransform = null;
-            EntitySystem.FirstQuery(new Action<Camera, Transform, MainCameraTag>((cam, tr, tag) => { camera = cam; cameraTransform = tr; }));
+            (Camera camera, Transform cameraTransform) = Camera.mainCamera;
             if (camera == null)
                 return;
 
@@ -155,9 +153,7 @@ namespace Engine.Systems
             ShaderProgram shader = ShaderContainer.GetShader("bones");
             shader.Bind(gl);
             //  Set the light position.
-            Camera camera = null;
-            Transform cameraTransform = null;
-            EntitySystem.FirstQuery(new Action<Camera, Transform, MainCameraTag>((cam, tr, tag) => { camera = cam; cameraTransform = tr; }));
+            (Camera camera, Transform cameraTransform) = Camera.mainCamera;
             if (camera == null)
                 return;
 
@@ -166,7 +162,6 @@ namespace Engine.Systems
             var vertexBufferArray = mesh.vertexBufferArray;
             vertexBufferArray.Bind(gl);
 
-            shader.SetUniform3(gl, "DiffuseMaterial", 0.2f, 1.5f, 0.1f);
             shader.SetUniformMatrix4(gl, "ViewProjection", (view * camera.GetProjection).ToArray());
 
 
@@ -176,10 +171,32 @@ namespace Engine.Systems
             shader.Unbind(gl);
 
             gl.DepthFunc(OpenGL.GL_LESS);
+
+            boneRender.RenderNames(gl);
+            boneRender.Clear();
         }
         public override void End()
         {
         }
     }
+    public class HeightMapRenderSystem : BaseSystem
+    {
 
+        public HeightMapRenderSystem()
+            : base(0) { }
+        public override void Start() { }
+        public void Update(HeightMap heightMap, Transform transform)
+        {
+            OpenGL gl = GLContainer.OpenGL;
+            (Camera camera, Transform cameraTransform) = Camera.mainCamera;
+            if (camera == null)
+                return;
+
+            Matrix4x4 view = cameraTransform.GetMatrix;
+            Matrix4x4.Invert(view, out view);
+            heightMap.Render(gl, (view * camera.GetProjection).ToArray(), transform.GetMatrix.ToArray(), cameraTransform);
+
+        }
+        public override void End() { }
+    }
 }

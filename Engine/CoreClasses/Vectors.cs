@@ -135,5 +135,14 @@ namespace Engine
                 }
             }
         }
+
+        
+        public static Vector4D operator *(Matrix4x4 matrix, Vector4D vector)
+        {
+            return new Vector4D(matrix.A1 * vector.X + matrix.B1 * vector.Y + matrix.C1 * vector.Z + matrix.D1 * vector.W,
+                                matrix.A2 * vector.X + matrix.B2 * vector.Y + matrix.C2 * vector.Z + matrix.D2 * vector.W,
+                                matrix.A3 * vector.X + matrix.B3 * vector.Y + matrix.C3 * vector.Z + matrix.D3 * vector.W,
+                                matrix.A4 * vector.X + matrix.B4 * vector.Y + matrix.C4 * vector.Z + matrix.D4 * vector.W);
+        }
     }
 }

@@ -27,6 +27,7 @@ namespace Engine
             GLContainer.OpenGL = openGL;
             EntitySystem.AddSystem<Systems.RenderSystem>();
             EntitySystem.AddSystem<Systems.BoneRenderSystem>();
+            EntitySystem.AddSystem<Systems.HeightMapRenderSystem>();
             EntitySystem.AddSystem<Systems.CameraControlSystem>();
             EntitySystem.AddSystem<Systems.SkyBoxRenderSystem>();
             SceneLoader.LoadScene();
@@ -43,12 +44,14 @@ namespace Engine
         }
         private void OpenGLControl_Resized(object sender, OpenGLRoutedEventArgs args)
         {
-            
         }
         private void OpenGLControl_OpenGLDraw(object sender, OpenGLRoutedEventArgs args)
         {
+            int[] viewport = new int[4];
+            GLContainer.OpenGL.GetInteger(SharpGL.Enumerations.GetTarget.Viewport, viewport);
+            GLContainer.Width = viewport[2];
+            GLContainer.Height = viewport[3];
             OpenGL gl = args.OpenGL;
-           
             gl.Clear(OpenGL.GL_COLOR_BUFFER_BIT | OpenGL.GL_DEPTH_BUFFER_BIT);
             Time.Update();
             EntitySystem.Update();

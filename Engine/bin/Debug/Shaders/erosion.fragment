@@ -1,0 +1,92 @@
+#version 420
+in vec2 UV;
+out vec4 FragColor;
+
+uniform vec4 heightMapSize;
+uniform vec4 heightMapProperty;
+
+layout(binding=0) uniform sampler2D heightMap;
+layout(binding=1) uniform sampler2D gradMap;
+uniform vec3 time;
+uniform float first_time_factor;
+#define DIR 4
+
+#define sediment_factor 1.9
+#define deposit_factor 0.2
+#define water_capacity 0.05
+#define deserty 0.9
+#define rainy 0.00000
+float rain(vec2 uv)
+{
+    return rainy;// * float(sin(time.y*10) > 0.8);
+    ivec2 i = ivec2(heightMapSize.zw * uv);
+    const int step = 3;
+    const int size = step * step;
+    int c = (i.x * step + i.y) % size;
+    int t = int(time.y*10) % size;
+    bool point = c == t;
+    return point ? rainy : 0;
+}
+vec4 Delta(vec2 uv)
+{
+    vec2 dx = vec2(heightMapSize.x, 0), dy = vec2(0, heightMapSize.y);
+    vec2 duv[DIR] = vec2[DIR](dx , dy, -dx, -dy);
+    
+    vec4 data0 = texture(heightMap, uv);
+    float h0 = data0.x, s0 = data0.y, w0 = data0.z, out_flow = data0.w;
+    float r0 = h0 + s0;
+    if (out_flow > 0)
+    {
+        float capacity = w0 * water_capacity - s0;
+        if (capacity > 0)
+        {
+            s0 += sediment_factor * capacity;
+            h0 -= sediment_factor * capacity;
+        } else
+        {
+            s0 += capacity * deposit_factor;
+            h0 -= capacity * deposit_factor;
+        }
+        s0 -= out_flow * s0;
+        w0 -= out_flow * w0;
+    } else
+    {
+        h0 += s0 * deposit_factor;
+        s0 -= s0 * deposit_factor;
+    }
+    w0 *= 1 - deserty;
+    w0 += rain(uv);
+    float d[DIR];
+    for (uint i = 0; i < DIR; ++i)
+    {
+
+        vec4 data = texture(heightMap, uv + duv[i]);
+
+        vec4 flow = texture(gradMap, uv + duv[i]);
+
+        float h = data.x, s = data.y, w = data.z, flow_weigth = data.a;
+        uint j = (i + DIR / 2) % DIR;
+        float weight = flow[j] * flow_weigth * first_time_factor;
+        s0 += weight * s;
+        w0 += weight * w;
+        float r = h + s;
+        d[i] = r0 - r;        
+    }
+    float max_out_sw = 0;
+    for (uint i = 0; i < DIR; ++i)
+        if (d[i] > 0)
+            max_out_sw = max(max_out_sw, min(d[i], s0 + w0));
+
+    if (max_out_sw > 0 && s0 + w0 > 1e-5)
+        max_out_sw = max_out_sw / (s0 + w0);
+
+    return vec4(h0, s0, w0, max_out_sw);
+}
+void main()
+{
+    
+    vec4 data = Delta(UV);
+    FragColor = data;
+}
+
+

@@ -14,9 +14,11 @@ namespace Engine.Systems
 
             Entity camera = Entity.Create<Camera>();
             camera.GetComponent<Camera>().CreatePerspective(Mathf.DegToRad * 90, MainWindow.aspectRatio, 0.01f, 100000);
-            camera.AddComponent<Transform>().position = new Vector3(0, 100, 150);
+            camera.AddComponent<Transform>().position = new Vector3(500, 500, 1000);
+            Vector2 r = new Vector2(0, -45 * Mathf.DegToRad);
+            camera.GetComponent<Transform>().SetRotation(r.X,r.Y, 0);
             //camera.AddComponent<ArcballCamera>().Init(150, 0, 0, new Vector3(0, 100, 0));
-            camera.AddComponent<FreeCamera>();
+            camera.AddComponent<FreeCamera>().EulerRotation = r;
             camera.AddComponent<MainCameraTag>();
 
             Input.KeyAction[Key.Space] += LockMainCamera;
@@ -43,6 +45,7 @@ namespace Engine.Systems
             Vector3 d = transform.forward * (Input.GetKey(Key.W) - Input.GetKey(Key.S)) +
                 transform.right * (Input.GetKey(Key.D) - Input.GetKey(Key.A)) +
                  transform.up * (Input.GetKey(Key.E) - Input.GetKey(Key.C));
+            d *= 1 + Input.GetKey(Key.LeftShift) * 2;
             float pixToDeg = 1f;
             freeCamera.EulerRotation +=Input.mouseDelta * pixToDeg* Mathf.DegToRad;
             transform.position += d*10f;

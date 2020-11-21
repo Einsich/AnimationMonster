@@ -1,0 +1,59 @@
+#version 330
+in vec2 UV;
+out vec4 FragColor;
+
+
+ #define seed 10808
+ #define oct 10
+vec2 GetNorm(float x,float y)
+{
+	const vec2[16] perlinNormal = vec2[16](vec2(1, 0), vec2(0, 1) , vec2(-1, 0) , vec2(0, -1) , vec2(0.7f, 0.7f) , vec2(0.7f, -0.7f) ,
+   vec2(-0.7f, 0.7f),vec2(-0.7f, -0.7f),vec2(0.86f, 0.5f), vec2(0.86f,-0.5f), vec2(-0.86f, 0.5f), vec2(-0.86f, -0.5f),
+     vec2(0.5f, 0.86f),  vec2(0.5f, -0.86f),  vec2(-0.5f, 0.86f), vec2(-0.5f, -0.86f));
+    int v = (((int(x) * (111903 + seed)) ^ (int(y) * (2973 + seed)) + 26976))%113;
+    return perlinNormal[v & 15];
+}
+float Curve(float t)
+{
+    return t * t * t * (t * (t * 6 - 15) + 10);
+}
+float GetNoiseIn(float x0,float y0)
+{
+    float x = int(x0), y = int(y0);
+    vec2 a = GetNorm(x    , y    );
+    vec2 b = GetNorm(x + 1, y    );
+    vec2 c = GetNorm(x    , y + 1);
+    vec2 d = GetNorm(x + 1, y + 1);
+    x = x0 - x;
+    y = y0 - y;
+    float tx1 = dot(vec2(x, y), a);
+    float tx2 = dot(vec2(x - 1, y), b);
+    float bx1 = dot(vec2(x, y - 1), c);
+    float bx2 = dot(vec2(x - 1, y - 1), d);
+
+    x = Curve(x); y = Curve(y);
+    
+    float tx = mix(tx1, tx2, x);
+    float bx = mix(bx1, bx2, x);
+    float tb = mix(tx, bx, y);
+
+    return tb;
+}
+void main()
+{
+	float k, x= UV.x, y= UV.y;
+    float  mx = 0;
+    float a = 0;
+    for (int l = 0; l < oct; l++)
+    {
+    	k = pow(2, l);
+        mx += 1 / k;
+        a += GetNoiseIn(x * k , y * k) /k;
+
+    }
+    a = (a / mx + 1) / 2;
+	float h = clamp(a, 0.0f, 1.0f);
+    FragColor = vec4(h, 0, 0.1, 0);
+}
+
+

@@ -27,6 +27,7 @@ namespace Engine
 
         static MouseButtonState[] mouseState = new MouseButtonState[3];
         public static KeyActions KeyAction { get; } = new KeyActions();
+        public static KeyDownActions KeyDownAction { get; } = new KeyDownActions();
         static Input()
         {
             for (int i = 0; i < keys.Length; i++)
@@ -57,6 +58,7 @@ namespace Engine
                 keys[i].pressed = true;
                 keys[i].time = Time.time;
                 KeyAction[i]?.Invoke(true);
+                KeyDownAction[i]?.Invoke();
             }
         }
         public static void KeyUpEventListener(object sender, KeyEventArgs args)
@@ -115,6 +117,20 @@ namespace Engine
                 set => KeyAction[(int)key] = value;
             }
             public Action<bool> this[int key]
+            {
+                get => KeyAction[(int)key];
+                set => KeyAction[(int)key] = value;
+            }
+        }
+        public class KeyDownActions
+        {
+            public Action[] KeyAction = new Action[KeyCount];
+            public Action this[Key key]
+            {
+                get => KeyAction[(int)key];
+                set => KeyAction[(int)key] = value;
+            }
+            public Action this[int key]
             {
                 get => KeyAction[(int)key];
                 set => KeyAction[(int)key] = value;

@@ -46,8 +46,6 @@ namespace SharpGL.Texture
         public void SetImage(OpenGL gl, Bitmap image, bool mipmap)
         {
             //	Get the maximum texture size supported by OpenGL.
-            int[] textureMaxSize = { 0 };
-            gl.GetInteger(OpenGL.GL_MAX_TEXTURE_SIZE, textureMaxSize);
 
 
             BitmapData bitmapData = image.LockBits(new Rectangle(0, 0, image.Width, image.Height),
@@ -68,7 +66,6 @@ namespace SharpGL.Texture
                     bitmapData.Scan0);
 
             image.UnlockBits(bitmapData);
-            image.Dispose();
             if (mipmap)
             {
                 gl.TexParameter(OpenGL.GL_TEXTURE_2D, OpenGL.GL_TEXTURE_MIN_FILTER, OpenGL.GL_LINEAR_MIPMAP_LINEAR);
@@ -79,6 +76,21 @@ namespace SharpGL.Texture
                 gl.TexParameter(OpenGL.GL_TEXTURE_2D, OpenGL.GL_TEXTURE_MIN_FILTER, OpenGL.GL_LINEAR);
                 gl.TexParameter(OpenGL.GL_TEXTURE_2D, OpenGL.GL_TEXTURE_MAG_FILTER, OpenGL.GL_LINEAR);
             }
+        }
+        public void SetImage(OpenGL gl, uint width, uint height, uint clamp)
+        {
+            Width = width;
+            Height = height;
+            gl.BindTexture(OpenGL.GL_TEXTURE_2D, textureObject);
+            gl.TexImage2D(OpenGL.GL_TEXTURE_2D, 0, OpenGL.GL_RGBA32F,
+                (int)Width, (int)Height, 0, OpenGL.GL_RGBA, OpenGL.GL_FLOAT,
+                IntPtr.Zero);
+
+            gl.TexParameter(OpenGL.GL_TEXTURE_2D, OpenGL.GL_TEXTURE_MIN_FILTER, OpenGL.GL_LINEAR);
+            gl.TexParameter(OpenGL.GL_TEXTURE_2D, OpenGL.GL_TEXTURE_MAG_FILTER, OpenGL.GL_LINEAR);
+            gl.TexParameter(OpenGL.GL_TEXTURE_2D, OpenGL.GL_TEXTURE_WRAP_S, clamp);
+            gl.TexParameter(OpenGL.GL_TEXTURE_2D, OpenGL.GL_TEXTURE_WRAP_T, clamp);
+            
         }
 
         public uint Width { get; private set; }
@@ -121,11 +133,9 @@ namespace SharpGL.Texture
             }
             if (mipmap)
             {
-                //gl.GenerateMipmapEXT(OpenGL.GL_TEXTURE_CUBE_MAP);
 
                 gl.TexParameter(OpenGL.GL_TEXTURE_CUBE_MAP, OpenGL.GL_TEXTURE_MIN_FILTER, OpenGL.GL_LINEAR_MIPMAP_LINEAR);
                 gl.TexParameter(OpenGL.GL_TEXTURE_CUBE_MAP, OpenGL.GL_TEXTURE_MAG_FILTER, OpenGL.GL_LINEAR);
-               // gl.TexParameter(OpenGL.GL_TEXTURE_CUBE_MAP, OpenGL.GL_AUTO_GENERATE_MIPMAP, OpenGL.GL_TRUE);
                 gl.TexParameter(OpenGL.GL_TEXTURE_CUBE_MAP, OpenGL.GL_TEXTURE_WRAP_S, OpenGL.GL_CLAMP_TO_EDGE);
                 gl.TexParameter(OpenGL.GL_TEXTURE_CUBE_MAP, OpenGL.GL_TEXTURE_WRAP_T, OpenGL.GL_CLAMP_TO_EDGE);
                 gl.TexParameter(OpenGL.GL_TEXTURE_CUBE_MAP, OpenGL.GL_TEXTURE_WRAP_R, OpenGL.GL_CLAMP_TO_EDGE);

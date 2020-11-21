@@ -4,6 +4,8 @@ using System.Linq;
 using SharpGL.VertexBuffers;
 using SharpGL;
 using Assimp;
+using System.Security.AccessControl;
+using System.Windows.Media;
 namespace Engine
 {
     public class ProcessedMesh
@@ -193,7 +195,9 @@ namespace Engine
         {
             boneMap = info.boneMap;
             meshToBone = info.meshToBone;
-            CalculateBonesTransform(info.root, info.animRoot, info.root.Transform, info.animation, info.time * (float)info.animation.TicksPerSecond, 0);
+            CalculateBonesTransform(info.root, info.animRoot, Matrix4x4.Identity, info.animation, info.time * (float)info.animation.TicksPerSecond, 0);
+            DrawTree(info.root, Matrix4x4.Identity, new Vector3D(1.5f, 0.1f, 0.1f));
+            DrawTree(info.animRoot, Matrix4x4.Identity, new Vector3D(1.5f, 1.5f, 0.1f));
         }
         private void CalculateBonesTransform(Node node, Node animNode, Matrix4x4 parent, Animation animation, float time, int d)
         {
@@ -217,7 +221,7 @@ namespace Engine
             }
             nodeTransform = nodeTransform * parent;
 
-            BoneRender.AddBones(parent, nodeTransform);
+            BoneRender.AddBones(parent, nodeTransform, new Vector3D(0.1f,1.5f,0.1f), null);
 
             if (nodeMap.ContainsKey(node.Name))
             {
@@ -227,16 +231,18 @@ namespace Engine
             }
             for (int i = 0; i < node.ChildCount; i++)
             {
-                /*
-                Node nextAnimNode = animNode != null && i < animNode.ChildCount ? animNode.Children[i] : null;
-                if (d < 2 || node.Name == "Spine3")
-                    nextAnimNode = animNode;
-                else
-                    if (node.Name == "Spine4")
-                    nextAnimNode = animNode.Children[(i ^ 3) % 3];
-                    */
                 CalculateBonesTransform(node.Children[i], BoneRender.GetNextAnimTreeChild(node, animNode, i), nodeTransform, animation, time, d + 1);
+            }
+        }
+        private void DrawTree(Node node, Matrix4x4 parent, Vector3D color)
+        {
+            Matrix4x4 nodeTransform = node.Transform * parent;
+            string name = node.Name;
+            BoneRender.AddBones(parent, nodeTransform, color, null);
 
+            for (int i = 0; i < node.ChildCount; i++)
+            {
+                DrawTree(node.Children[i], nodeTransform, color);
             }
         }
         private void WriteMatrix(float[] array, int ind, Matrix4x4 m)
@@ -309,6 +315,25 @@ namespace Engine
                 arrow = new ProcessedMesh(faces, vertecs, null, null);
             }
             return arrow;
+        }
+        public static ProcessedMesh TerrainPart(int x0, int y0, int tileX, int tileY, float scale)
+        {
+            List<Face> faces = new List<Face>();
+            List<Vector3D> vertices = new List<Vector3D>();
+            for (int i = y0; i < y0 + tileY + 1; i++)
+                for (int j = x0; j < x0 + tileX + 1; j++)
+                {
+                    vertices.Add(new Vector3D(j, 0, i) * scale);
+                }
+            for (int i = 0; i < tileY; i++)
+                for (int j = 0; j < tileX; j++)
+                {
+                    int a = i * (tileX + 1) + j;
+                    int b = a + tileX + 1;
+                    faces.Add(new Face(new int[] { a, b, b + 1 }));
+                    faces.Add(new Face(new int[] { b + 1, a + 1, a }));
+                }
+            return new ProcessedMesh(faces, vertices, null, null);
         }
     }
     public class MeshRenderer
