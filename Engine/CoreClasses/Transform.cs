@@ -27,6 +27,11 @@ namespace Engine
 
         public Matrix4x4 GetMatrix => transform * Matrix4x4.CreateScale(scale) * Matrix4x4.CreateTranslation(position);
 
+        public void SetArcball(ArcballCamera arcballCamera)
+        {
+            position = arcballCamera.Target + arcballCamera.Distance * arcballCamera.Direction;
+            SetRotation(-arcballCamera.Rotation.X, -arcballCamera.Rotation.Y, 0);
+        }
 
     }
 }

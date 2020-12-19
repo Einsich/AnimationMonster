@@ -20,9 +20,9 @@ namespace Engine
     {
         public float Distance = 10;
         public Vector2 Rotation;
-        public Vector3 Target;
+        public Vector3 Target, Direction;
         public void Init(float Radius, float degreeX, float degreeY, Vector3 target)
-            => (Distance, Rotation, Target) = (Radius, new Vector2(degreeX, degreeY) * Mathf.DegToRad, target);
+            => (Distance, Rotation, Target, Direction) = (Radius, new Vector2(degreeX, degreeY) * Mathf.DegToRad, target, new Vector3(1, 0, 0));
     }
     public class Camera
     {
@@ -34,7 +34,7 @@ namespace Engine
 
         public Matrix4x4 GetProjection => projection;
 
-        static Entity mainEntity;
+        public static Entity mainEntity;
         public static (Camera, Transform) mainCamera
         {
             get

@@ -14,11 +14,12 @@ namespace Engine.Systems
 
             Entity camera = Entity.Create<Camera>();
             camera.GetComponent<Camera>().CreatePerspective(Mathf.DegToRad * 90, MainWindow.aspectRatio, 0.01f, 100000);
-            camera.AddComponent<Transform>().position = new Vector3(500, 500, 1000);
+            //camera.AddComponent<Transform>().position = new Vector3(500, 500, 1000);
+            camera.AddComponent<Transform>().position = new Vector3(50, 150, 100);
             Vector2 r = new Vector2(0, -45 * Mathf.DegToRad);
             camera.GetComponent<Transform>().SetRotation(r.X,r.Y, 0);
-            //camera.AddComponent<ArcballCamera>().Init(150, 0, 0, new Vector3(0, 100, 0));
-            camera.AddComponent<FreeCamera>().EulerRotation = r;
+            camera.AddComponent<ArcballCamera>().Init(150, 0, 0, new Vector3(0, 100, 0));
+            //camera.AddComponent<FreeCamera>().EulerRotation = r;
             camera.AddComponent<MainCameraTag>();
 
             Input.KeyAction[Key.Space] += LockMainCamera;
@@ -62,9 +63,8 @@ namespace Engine.Systems
             }
             float y = arcballCamera.Rotation.Y;
             float x = arcballCamera.Rotation.X + Mathf.PI * 0.5f;
-            Vector3 p = new Vector3(Mathf.Cos(x) * Mathf.Cos(y), Mathf.Sin(y), Mathf.Sin(x) * Mathf.Cos(y));
-            transform.position = arcballCamera.Target + arcballCamera.Distance * p;
-            transform.SetRotation(-arcballCamera.Rotation.X, -arcballCamera.Rotation.Y, 0);
+            arcballCamera.Direction = new Vector3(Mathf.Cos(x) * Mathf.Cos(y), Mathf.Sin(y), Mathf.Sin(x) * Mathf.Cos(y));
+            transform.SetArcball(arcballCamera);
         }
 
     }

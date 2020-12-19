@@ -167,5 +167,6 @@ namespace Engine
         {
             GLContainer.OpenGL.Uniform4(GLContainer.OpenGL.GetUniformLocation(shader.ShaderProgramObject, name), v.X, v.Y, v.Z, v.W);
         }
+
     }
 }

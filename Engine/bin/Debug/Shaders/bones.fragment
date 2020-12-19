@@ -2,7 +2,12 @@ out vec4 FragColor;
 
 uniform vec3 DiffuseMaterial;
 
+uniform vec3 LightPosition;
+
+in vec3 EyespaceNormal;
 void main()
 {
-    FragColor = vec4(DiffuseMaterial, 1.0);
+	float df = max(0, dot(normalize(LightPosition), normalize(EyespaceNormal)));
+	df = 0.5 + df * 0.5;
+    FragColor = vec4(DiffuseMaterial * df, 1.0);
 }

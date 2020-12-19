@@ -1,8 +1,15 @@
 layout(location = 0)in vec3 Position ;
+layout(location = 1)in vec3 Normal ;
 uniform mat4 ViewProjection;
 uniform mat4 Model;
 
+out vec3 EyespaceNormal;
 void main()
 {
-    gl_Position = ViewProjection* Model * vec4(Position, 1);
+    gl_Position = ViewProjection * Model * vec4(Position, 1);
+    mat3 ModelNorm = mat3(Model);
+    ModelNorm[0] = normalize(ModelNorm[0]);
+    ModelNorm[1] = normalize(ModelNorm[1]);
+    ModelNorm[2] = normalize(ModelNorm[2]);
+    EyespaceNormal = ModelNorm * Normal;
 }

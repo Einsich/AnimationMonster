@@ -149,14 +149,19 @@ namespace Engine.Systems
 
             ProcessedMesh mesh = ProcessedMesh.Arrow();
             OpenGL gl = GLContainer.OpenGL;
-            gl.DepthFunc(OpenGL.GL_ALWAYS);
+            //gl.DepthFunc(OpenGL.GL_ALWAYS);
             ShaderProgram shader = ShaderContainer.GetShader("bones");
             shader.Bind(gl);
             //  Set the light position.
             (Camera camera, Transform cameraTransform) = Camera.mainCamera;
             if (camera == null)
                 return;
-
+            var arcBall = Camera.mainEntity.GetComponent<ArcballCamera>();
+            if (arcBall != null)
+            {
+                arcBall.Target = new System.Numerics.Vector3(BoneRender.rootPoint.X, BoneRender.rootPoint.Y, BoneRender.rootPoint.Z);
+                cameraTransform.SetArcball(arcBall);
+            }
             Matrix4x4 view = cameraTransform.GetMatrix;
             Matrix4x4.Invert(view, out view);
             var vertexBufferArray = mesh.vertexBufferArray;
@@ -164,15 +169,15 @@ namespace Engine.Systems
 
             shader.SetUniformMatrix4(gl, "ViewProjection", (view * camera.GetProjection).ToArray());
 
+            shader.SetUniform3(gl, "LightPosition", 0.25f, 15f, 10f);
 
             boneRender.Render(gl, shader, mesh.vertexCount);
-
             vertexBufferArray.Unbind(gl);
             shader.Unbind(gl);
 
-            gl.DepthFunc(OpenGL.GL_LESS);
-
-            boneRender.RenderNames(gl);
+            //gl.DepthFunc(OpenGL.GL_LESS);
+            boneRender.RenderAnimationInfo(gl);    
+            //boneRender.RenderNames(gl);
             boneRender.Clear();
         }
         public override void End()

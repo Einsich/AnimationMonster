@@ -25,7 +25,8 @@ namespace Engine
         {
             return a * (1 - t) + b * t;
         }
-
+        public static float Min(float a, float b) => a < b ? a : b;
+        public static float Max(float a, float b) => a > b ? a : b;
     }
 
     /*public struct Vector2

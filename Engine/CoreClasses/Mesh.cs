@@ -189,56 +189,64 @@ namespace Engine
             }
             return output;
         }
-        private Dictionary<string, int> boneMap;
-        private List<Matrix4x4> meshToBone;
+        AnimationRenderInfo currAnimation;
         public void ProcessAnimation(AnimationRenderInfo info)
         {
-            boneMap = info.boneMap;
-            meshToBone = info.meshToBone;
-            CalculateBonesTransform(info.root, info.animRoot, Matrix4x4.Identity, info.animation, info.time * (float)info.animation.TicksPerSecond, 0);
-            DrawTree(info.root, Matrix4x4.Identity, new Vector3D(1.5f, 0.1f, 0.1f));
-            DrawTree(info.animRoot, Matrix4x4.Identity, new Vector3D(1.5f, 1.5f, 0.1f));
+            currAnimation = info;
+
+            CalculateBonesTransform(info.modelRoot, Matrix4x4.Identity, 0);
+            //DrawTree(info.modelRoot, Matrix4x4.Identity, new Vector3D(1.5f, 0.1f, 0.1f));
+            //DrawTree(info.animRoot, Matrix4x4.Identity, new Vector3D(1.5f, 1.5f, 0.1f));
+            Matrix4x4 nodeTransform = info.modelRoot.Transform;
+            BoneRender.animationInfo = string.Format("{0}, frame {1} / {2}", info.animationInfo.animationName, info.currentFrame, info.animationInfo.frameCount);
         }
-        private void CalculateBonesTransform(Node node, Node animNode, Matrix4x4 parent, Animation animation, float time, int d)
+        private void CalculateBonesTransform(Node node, Matrix4x4 parent, int d)
         {
-            Matrix4x4 nodeTransform = animNode != null ? animNode.Transform : node.Transform ;
+            Matrix4x4 nodeTransform = node.Transform ;
             // nodeTransform = node.Transform;
             
-            if (boneMap.ContainsKey(node.Name))
+            if (currAnimation.animationInfo.boneMap.ContainsKey(node.Name))
             {
                 
-                int nodeId = boneMap[node.Name];
-                var chanel = animation.NodeAnimationChannels[nodeId];
-                Matrix4x4 scale = Matrix4x4.FromScaling(chanel.GetLerpedScale(time));
-                Matrix4x4 rotation = new Matrix4x4(chanel.GetLerpedRotation(time).GetMatrix());
-                Matrix4x4 translation = Matrix4x4.FromTranslation(chanel.GetLerpedPosition(time));
-                nodeTransform = scale * rotation * translation;
-                
+                int nodeId = currAnimation.animationInfo.boneMap[node.Name];
+                var chanel = currAnimation.animationInfo.animationNodes[nodeId];
+                Matrix4x4 rotation = new Matrix4x4(chanel.GetLerpedRotation(currAnimation.currentFrame, currAnimation.nextFrame, currAnimation.Lerptime).GetMatrix());
+                Matrix4x4 translation = Matrix4x4.FromTranslation(chanel.GetLerpedPosition(currAnimation.currentFrame, currAnimation.nextFrame, currAnimation.Lerptime));
+                if(d==0)
+                {
+                    nodeTransform = rotation * nodeTransform * translation;
+                    BoneRender.rootPoint = new Vector3D(nodeTransform.A4, nodeTransform.B4, nodeTransform.C4);
+                }   else
+                {
+                    nodeTransform = rotation * nodeTransform;
+                }
+                               
             }
             else
             {
                 //Console.WriteLine($"!{node.Name} + {(animNode != null ? animNode.Name : "null")}");
             }
             nodeTransform = nodeTransform * parent;
-
-            BoneRender.AddBones(parent, nodeTransform, new Vector3D(0.1f,1.5f,0.1f), null);
+            //if (d == 0)
+            //    BoneRender.rootPoint = new Vector3D(nodeTransform.A4, nodeTransform.B4, nodeTransform.C4);
+            BoneRender.AddBones(parent, nodeTransform, new Vector3D(0.1f,1.5f,0.1f), node.Name);
 
             if (nodeMap.ContainsKey(node.Name))
             {
                 int bone = nodeMap[node.Name];
 
-                WriteMatrix(boneTransform, bone, meshToBone[bone] * nodeTransform);
+                WriteMatrix(boneTransform, bone, currAnimation.animationInfo.meshToBone[bone] * nodeTransform);
             }
             for (int i = 0; i < node.ChildCount; i++)
             {
-                CalculateBonesTransform(node.Children[i], BoneRender.GetNextAnimTreeChild(node, animNode, i), nodeTransform, animation, time, d + 1);
+                CalculateBonesTransform(node.Children[i], nodeTransform, d + 1);
             }
         }
         private void DrawTree(Node node, Matrix4x4 parent, Vector3D color)
         {
             Matrix4x4 nodeTransform = node.Transform * parent;
             string name = node.Name;
-            BoneRender.AddBones(parent, nodeTransform, color, null);
+            BoneRender.AddBones(parent, nodeTransform, color, name);
 
             for (int i = 0; i < node.ChildCount; i++)
             {
@@ -300,11 +308,15 @@ namespace Engine
                 }
                 p[3] = new Vector3D(0, 1, 0);
                 List<Vector3D> vertecs = new List<Vector3D>();
+                List<Vector3D> normals = new List<Vector3D>();
                 List<Face> faces = new List<Face>();
                 void addTriangle(Vector3D a, Vector3D b, Vector3D c)
                 {
                     int ind = vertecs.Count;
+                    Vector3D n = -Vector3D.Cross(b - a, c - a);
+                    n.Normalize();
                     vertecs.Add(a); vertecs.Add(b); vertecs.Add(c);
+                    normals.Add(n); normals.Add(n); normals.Add(n);
                     faces.Add(new Face(new int[] { ind, ind + 1, ind + 2 }));
                 }
                 addTriangle(p[0], p[2], p[1]);
@@ -312,7 +324,7 @@ namespace Engine
                 addTriangle(p[3], p[1], p[2]);
                 addTriangle(p[3], p[0], p[1]);
 
-                arrow = new ProcessedMesh(faces, vertecs, null, null);
+                arrow = new ProcessedMesh(faces, vertecs, normals, null);
             }
             return arrow;
         }

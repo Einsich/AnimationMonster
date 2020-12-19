@@ -17,10 +17,10 @@ namespace Engine
         public static void LoadScene()
         {
             AssimpContext importer = new Assimp.AssimpContext();
-            CreateTerrein();
-            //LoadRococoAnimations(importer);
+            // CreateTerrein();
+            LoadMocapAnimations(importer);
             {
-                //AddCube(new System.Numerics.Vector3(0, -100, 0), new System.Numerics.Vector3(200,1,200));
+                AddCube(new System.Numerics.Vector3(0, -150, 0), new System.Numerics.Vector3(200,1,200));
 
             }
 
@@ -176,162 +176,168 @@ namespace Engine
             texture.SetImage(GLContainer.OpenGL, new Bitmap(@"Models\tex\rp_manuel_animated_001_dif.jpg"), true);
             texture.Unbind(GLContainer.OpenGL);
         }
-        static void printTree(Node node, int d = 0)
+        static void printTree(Node node, int d, List<AnimationNode> animationNodes = null)
         {
-            
-            Console.WriteLine(new string(' ', d * 2) + " " + node.Name);
+            string ContainsInAnimNodes(string nodeName)
+            {
+                if (animationNodes != null)
+                {
+                    foreach (var x in animationNodes)
+                        if (x.name == nodeName)
+                            return "*";
+                }
+                return "";
+            }
+                Console.WriteLine(new string(' ', d * 2) + " " + node.Name + ContainsInAnimNodes(node.Name) + " " + node.Transform.ToString()) ;
             for (int i = 0; i < node.ChildCount; i++)
-                printTree(node.Children[i], d + 1);
+                printTree(node.Children[i], d + 1, animationNodes);
         }
-        static void LoadRococoAnimations(AssimpContext importer)
+        static void LoadMocapAnimations(AssimpContext importer)
         {
             string directory = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
             string fileName;
-            fileName = Path.Combine(directory, @"Models\newtonalpha.fbx");
+            importer.SetConfig(new Assimp.Configs.FBXPreservePivotsConfig(false));
+            fileName = Path.Combine(directory, @"FBX_Animations\MotusMan_v55\MotusMan_v55.fbx");
             Scene b = importer.ImportFile(fileName, PostProcessSteps.Triangulate | PostProcessSteps.FlipUVs | PostProcessSteps.LimitBoneWeights | PostProcessSteps.GenerateNormals);
             Entity model = Entity.Create<MeshRenderer, AnimationRenderer, Transform>();
             var mesh = new ProcessedMesh(b, 0);
             model.GetComponent<MeshRenderer>().mesh = mesh;
             Node modelRoot = FindHips(b.RootNode);
-            
-            string[] names = Directory.GetFiles(Path.Combine(directory, $@"Models\mocap"), "*.fbx");
-            
+            Dictionary<string, int> boneMap = new Dictionary<string, int>();
+            for (int i = 0; i < b.Meshes[0].BoneCount; i++)
+                boneMap.Add(b.Meshes[0].Bones[i].Name, i);
+            string[] names = Directory.GetFiles(Path.Combine(directory, $@"FBX_Animations\Animation\Root_Motion"), "*.fbx");
+            List<Matrix4x4> meshToBone = new List<Matrix4x4>(b.Meshes[0].Bones.Select((x) => x.OffsetMatrix));
             List<AnimationInfo> animations = new List<AnimationInfo>();
+            int size = 0;
             for (int i = 0; i < names.Length; i++)
             {
-                Console.WriteLine($"*****{names[i]}*****");
-                Scene s = importer.ImportFile(names[i]);
+                Console.WriteLine($"**{names[i]}**");
+                Scene s = importer.ImportFile(names[i], PostProcessSteps.OptimizeGraph);
                 Animation anim = s.Animations[0];
-                int c = anim.NodeAnimationChannels[0].PositionKeys.Count;
-                try
-                {
-                    Console.WriteLine($"{anim.DurationInTicks} {anim.TicksPerSecond} {c} [{anim.NodeAnimationChannels[0].PositionKeys[1].Time}, {anim.NodeAnimationChannels[0].PositionKeys[c - 1].Time}]");
-                } catch
-                {
-                    int t = 0;
+                List<AnimationNode> animationNodes = GetAnimationInfo(anim.NodeAnimationChannels, boneMap);
+
+                Console.WriteLine($"Loaded {anim.DurationInTicks} channel count = {animationNodes.Count}");
+                int frameCount = -1;
+                foreach (var channel in animationNodes)
+                {        
+                    //Console.WriteLine($"{channel.name} P = {channel.translations.Count}, R = {channel.rotations.Count}");
+                    if (channel.rotations.Count != 0)
+                    {
+                        if (frameCount < 0)
+                            frameCount = channel.rotations.Count;
+                        else
+                            if (frameCount != channel.rotations.Count)
+                            channel.rotations.Clear();
+                    }
+                    size += channel.rotations.Count * 4;
+                    size += channel.translations.Count * 3;
                 }
+                size += animationNodes.Count;
                 Node animNode = FindHips(s.RootNode);
-                var p = GetRococoBonesMap(modelRoot, animNode, anim, directory, b.Meshes[0].Bones, mesh.nodeMap);
-                //printTree(animNode);
-                animations.Add(new AnimationInfo(p.Item1, p.Item2, anim, animNode));
+               
+                //normalizeDFS(s.RootNode, 0);
+                //printTree(s.RootNode, 0, animationNodes);
+                string animatonName = string.Format("{0} {1} / {2}", names[i].Substring(names[i].LastIndexOf('\\')+1), i + 1, names.Length);
+                animations.Add(new AnimationInfo(animatonName, boneMap, meshToBone, animationNodes, (float)(anim.DurationInTicks / anim.TicksPerSecond), frameCount));
             }
-            
+            Console.WriteLine("Size in bytes = " + (size * 4 / 1024).ToString());
             model.GetComponent<AnimationRenderer>().Create(animations, modelRoot);
 
         }
-        static (Dictionary<string, int>, List<Matrix4x4>) GetRococoBonesMap(Node root, Node animRoot, Animation animation, string directory, List<Bone>bones, Dictionary<string, int> nodeMap)
+        static string NormalizeName(string name)
         {
-            Dictionary<string, int> map = new Dictionary<string, int>();
-            List<Matrix4x4> meshToBone = new List<Matrix4x4>(bones.Select((b) => b.OffsetMatrix));
-            using (StreamWriter wr = new StreamWriter(Path.Combine(directory, $@"Models\report.txt")))
+            int index = name.IndexOf('$');
+            return (index > 0) ? name.Substring(0, index - 1) : name;
+        }
+        static void normalizeDFS(Node node, int d)
+        {
+            //Console.WriteLine(new string(' ', d * 4) + " " + node.Name);
+            if (node.Name.Contains("_$AssimpFbx$_"))
             {
-                void WrDFS(Node node)
+                string nodeName = node.Name;
+                nodeName = nodeName.Remove(nodeName.IndexOf('$') - 1);
+                Matrix4x4 transform = node.Transform;
+                Node child = node.Children[0];
+                while (NormalizeName(child.Name) == nodeName && child.ChildCount > 0)
                 {
-                    wr.WriteLine(node.Name);
-                    foreach (var x in node.Metadata)
-                        wr.WriteLine(x.Key.ToString() + " " + x.Value.ToString());
-                    wr.WriteLine("-----------------------");
-                    for (int i = 0; i < node.ChildCount; i++)
-                        WrDFS(node.Children[i]);
+                    transform = child.Transform * transform;
+                    child = child.Children[0];
                 }
-                //WrDFS(root);
-            }
-            string NormalizeName(string name)
-            {
-                int index = name.IndexOf('$');
-                return (index > 0) ? name.Substring(0, index - 1) : name;
-            }
-            void normalizeDFS(Node node, int d)
-            {
-                //Console.WriteLine(new string(' ', d * 4) + " " + node.Name);
-                if (node.Name.Contains("_$AssimpFbx$_"))
+                if (NormalizeName(child.Name) == nodeName)
                 {
-                    string nodeName = node.Name;
-                    nodeName = nodeName.Remove(nodeName.IndexOf('$') - 1);
-                    Matrix4x4 transform = node.Transform;
-                    Node child = node.Children[0];
-                    while (NormalizeName(child.Name) == nodeName && child.ChildCount > 0)
-                    {
-                        transform = child.Transform * transform;
-                        child = child.Children[0];
-                    }
+                    transform = child.Transform * transform;
+                }
+                else
                     child = child.Parent;
-                    child.Name = nodeName;
-                    child.Transform = transform;
-                    if (node.Parent != null)
-                        node.Parent.Children[node.Parent.Children.IndexOf(node)] = child;
-                    node = child;
-                }
-                //Console.WriteLine(new string(' ', d * 4) + " " + node.Name);
-                for (int i = 0; i < node.ChildCount; i++)
-                    normalizeDFS(node.Children[i], d + 1);
+                child.Name = nodeName;
+                child.Transform = transform;
+                if (node.Parent != null)
+                    node.Parent.Children[node.Parent.Children.IndexOf(node)] = child;
+                node = child;
             }
-            void dfs(Node node, Node animNode, Matrix4x4 parent, Matrix4x4 animParent, Matrix3x3 correction)
+            //Console.WriteLine(new string(' ', d * 4) + " " + node.Name);
+            for (int i = 0; i < node.ChildCount; i++)
+                normalizeDFS(node.Children[i], d + 1);
+        }
+        static List<AnimationNode> GetAnimationInfo(List<NodeAnimationChannel> channels, Dictionary<string, int> boneMap)
+        {
+            List<AnimationNode> animationNodes = new List<AnimationNode>(boneMap.Count);
+            for (int i = 0; i < boneMap.Count; i++)
+                animationNodes.Add(new AnimationNode());
+            foreach (var channel in channels)
+            {
+                string name = NormalizeName(channel.NodeName);
+                int i = boneMap[name];
+                if (channel.PositionKeys.Count > 1)
+                {
+                    foreach (var x in channel.PositionKeys)
+                        animationNodes[i].translations.Add(x.Value);
+                }
+                if (channel.RotationKeys.Count > 1)
+                {
+                    foreach (var x in channel.RotationKeys)
+                        animationNodes[i].rotations.Add(x.Value);
+                }
+            }
+            return animationNodes;
+        }
+        static  List<Matrix4x4> GetMocapMeshToBones(Node root, Node animRoot, Animation animation, List<Bone>bones, Dictionary<string, int> nodeMap)
+        {
+            List<Matrix4x4> meshToBone = new List<Matrix4x4>(bones.Select((b) => b.OffsetMatrix));
+            
+            
+            void dfs(Node node, Node animNode, Matrix4x4 parent, Matrix4x4 animParent)
             {
                 string name = node.Name;
 
-                //Console.WriteLine($"{name} {(animNode != null ? animNode.Name : "null")}");
-                if (animNode != null)
-                {
-
-                }
-                
-
-
                 Matrix4x4 nodeTransform = node.Transform;
-                Matrix4x4 animTransform = animNode != null ? animNode.Transform :  nodeTransform ;
-                parent = node.Transform * parent;
+                Matrix4x4 animTransform = animNode != null ? animNode.Transform : node.Transform;
+                parent = nodeTransform * parent;
                 animParent = animTransform * animParent;
-                /*
-                Matrix3x3 tr = node.Transform;
-                Vector3D d = node.Transform.Translation();
-                tr.Inverse();
-                Matrix4x4 t = new Matrix4x4(tr);
-                t = Matrix4x4.Identity;
-                t.SetTranslation(-d );
-                node.Transform = t;
-                */
-                //        Console.WriteLine($"{node.Name}\nmodelTree\n{parent.ToWriteLine()}animTree\n{animParent.ToWriteLine()}\n");
                 if (nodeMap.ContainsKey(node.Name))
                 {
                     int bone = nodeMap[node.Name];
                     if (animNode != null)
                     {
-                        /*
-                        Matrix3x3 m = new Matrix3x3(parent);
-                        Matrix3x3 a = new Matrix3x3(animParent);
-                        Vector3D offset = parent.Translation() - animParent.Translation();
-                        a.Inverse();
-                        Matrix4x4 t = new Matrix4x4(m * a) * Matrix4x4.FromTranslation(offset);
-                        */
                         Matrix4x4 m = (parent);
                         Matrix4x4 a = (animParent);
                         a.Inverse();
                         Matrix4x4 t = a * m;
                         t.SetTranslation(new Vector3D(0));
                         meshToBone[bone] *= t;
-                        correction = t;
                     }
                     else
                     {
-                        //meshToBone[bone] *= correction;
+                        Console.WriteLine("I hasn't animNode" + node.Name);
                     }
                     
-                    //correction.Inverse();
                 }
-
-                for (int i = 0; i < animation.NodeAnimationChannelCount && animNode != null; i++)
-                    if (animNode.Name == animation.NodeAnimationChannels[i].NodeName)
-                    {
-                        map.Add(node.Name, i);
-                        break;
-                    }
                 for (int i = 0; i < node.ChildCount; i++)
-                    dfs(node.Children[i], BoneRender.GetNextAnimTreeChild(node, animNode, i), parent, animParent, correction);
+                    dfs(node.Children[i], BoneRender.GetNextAnimTreeChild(node, animNode, i), parent, animParent);
             }
-            normalizeDFS(animRoot, 0);
-            dfs(root, animRoot, Matrix4x4.Identity, Matrix4x4.Identity, Matrix4x4.Identity);
-            return (map, meshToBone);
+            //dfs(root, animRoot, Matrix4x4.Identity, Matrix4x4.Identity);
+            return meshToBone;
         }
         static Node FindHips(Node node)
         {
@@ -343,7 +349,7 @@ namespace Engine
             }
             transform = node.Transform * transform;
             transform.SetTranslation(new Vector3D(0));
-            node.Transform = transform;
+            //node.Transform =  Matrix4x4.FromRotationY(Mathf.DegToRad * -90) * Matrix4x4.FromRotationX(Mathf.DegToRad * -90);
             return node;
         }
         static void AddCube(System.Numerics.Vector3 position, float scale) => AddCube(position, new System.Numerics.Vector3(scale));
